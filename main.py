@@ -16,7 +16,7 @@ class TaskManagementSystem:
         
         # font 
         self.custom_title_font = ctk.CTkFont(family="Arial", size=24, weight="bold")
-        self.custom_label_font = ctk.CTkFont(family="Arial", size=16, weight="normal")
+        self.custom_label_font = ctk.CTkFont(family="Arial", size=16, weight="bold")
         self.custom_task_label_font = ctk.CTkFont(family="Arial", size=14, weight="bold")
 
         # app title 
@@ -57,10 +57,13 @@ class TaskManagementSystem:
         filter_frame.grid_columnconfigure(1, weight=0)  
         filter_frame.grid_columnconfigure(2, weight=0)  
         filter_frame.grid_columnconfigure(3, weight=0) 
-        
+
         # task list frame
+        self.pending_list_label = ctk.CTkLabel(self.root, text="Pending Lists", font=self.custom_label_font)
+        self.pending_list_label.pack(padx=self.padx + 5, pady=(20, 5), anchor="w")
+
         self.tasks_list_frame = ctk.CTkFrame(self.root, corner_radius=10, fg_color="transparent")
-        self.tasks_list_frame.pack(padx=self.padx, pady=10, fill="both", expand = True)
+        self.tasks_list_frame.pack(padx=self.padx, pady=5, fill="both", expand = True)
 
     def create_task_card(self):
         card_frame = ctk.CTkFrame(self.tasks_list_frame, corner_radius=10)

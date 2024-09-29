@@ -57,8 +57,8 @@ class TaskManagementSystem:
         filter_frame.grid_columnconfigure(1, weight=0)  
         filter_frame.grid_columnconfigure(2, weight=0)  
         filter_frame.grid_columnconfigure(3, weight=0) 
-
-         # task list frame
+        
+        # task list frame
         self.tasks_list_frame = ctk.CTkFrame(self.root, corner_radius=10, fg_color="transparent")
         self.tasks_list_frame.pack(padx=self.padx, pady=10, fill="both", expand = True)
 
@@ -70,7 +70,17 @@ class TaskManagementSystem:
         ctk.CTkLabel(card_frame, text=f"Description:").grid(row=1, column=0, sticky="w", padx=20)
         ctk.CTkLabel(card_frame, text=f"Tag: ").grid(row=2, column=0, sticky="w", padx=20)
         ctk.CTkLabel(card_frame, text=f"Status: ").grid(row=3, column=0, sticky="w", padx=20)
-        ctk.CTkLabel(card_frame, text=f"Date: ").grid(row=4, column=0, sticky="w", padx=20, pady=(5,10))
+        ctk.CTkLabel(card_frame, text=f"Date: ").grid(row=4, column=0, sticky="w", padx=20, pady=(5,5))
+        
+        edit_button = ctk.CTkButton(card_frame, text="Edit", width=100)
+        edit_button.grid(row=5, column=0, padx=10, pady=(5, 10), sticky="e")
+
+        delete_button = ctk.CTkButton(card_frame, text="Delete", width=100)
+        delete_button.grid(row=5, column=1, padx=10, pady=(5, 10), sticky="e")
+
+        #layout
+        card_frame.grid_columnconfigure(0, weight=1)
+
 
 def main():
     root = ctk.CTk()

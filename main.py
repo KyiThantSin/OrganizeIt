@@ -8,7 +8,7 @@ class TaskManagementSystem:
     def __init__(self, root):
         self.root = root
         self.root.title("OrganizeIt")
-        self.root.geometry("900x700")
+        self.root.geometry("990x800")
          
         # padding
         self.padx = 80
@@ -96,24 +96,37 @@ class TaskManagementSystem:
         self.task_creation_window.title("Create New Task")
         self.task_creation_window.geometry("400x400")
 
-        ctk.CTkLabel(self.task_creation_window, text="Task Name", font=self.custom_label_font).pack(padx=10, pady=10)
-        self.task_name_entry = ctk.CTkEntry(self.task_creation_window, width=300)
-        self.task_name_entry.pack(padx=10, pady=10)
+        form_frame = ctk.CTkFrame(self.task_creation_window, fg_color="transparent")
+        form_frame.pack(padx=30, pady=10, fill="both", expand=True)
 
-        ctk.CTkLabel(self.task_creation_window, text="Description", font=self.custom_label_font).pack(padx=10, pady=10)
-        self.description_entry = ctk.CTkEntry(self.task_creation_window, width=300)
-        self.description_entry.pack(padx=10, pady=10)
+        # Task Name
+        ctk.CTkLabel(form_frame, text="Task Name", font=self.custom_label_font).grid(row=0, column=0, sticky="w", padx=5, pady=(10, 5))
+        self.task_name_entry = ctk.CTkEntry(form_frame, width=300)
+        self.task_name_entry.grid(row=1, column=0, padx=5, pady=(0, 10), sticky="ew")
 
-        ctk.CTkLabel(self.task_creation_window, text="Tag", font=self.custom_label_font).pack(padx=10, pady=10)
-        self.new_tag_entry = ctk.CTkComboBox(self.task_creation_window, values=["Work", "Personal", "Urgent"], width=180)
-        self.new_tag_entry.pack(padx=10, pady=10)
+        # Description
+        ctk.CTkLabel(form_frame, text="Description", font=self.custom_label_font).grid(row=2, column=0, sticky="w", padx=5, pady=(10, 5))
+        self.description_entry = ctk.CTkEntry(form_frame, width=300)
+        self.description_entry.grid(row=3, column=0, padx=5, pady=(0, 10), sticky="ew")
 
-        ctk.CTkLabel(self.task_creation_window, text="Status", font=self.custom_label_font).pack(padx=10, pady=10)
-        self.new_status_entry = ctk.CTkComboBox(self.task_creation_window, values=["On Progress", "Completed", "Not Started"], width=180)
-        self.new_status_entry.pack(padx=10, pady=10)
+        # Tag
+        ctk.CTkLabel(form_frame, text="Tag", font=self.custom_label_font).grid(row=4, column=0, sticky="w", padx=5, pady=(10, 5))
+        self.new_tag_entry = ctk.CTkComboBox(form_frame, values=["Work", "Personal", "Urgent"], width=180)
+        self.new_tag_entry.grid(row=5, column=0, padx=5, pady=(0, 10), sticky="ew")
 
-        submit_button = ctk.CTkButton(self.task_creation_window, text="Add Task", command=self.add_task)
-        submit_button.pack(padx=10, pady=(20, 10))
+        # Status
+        ctk.CTkLabel(form_frame, text="Status", font=self.custom_label_font).grid(row=6, column=0, sticky="w", padx=5, pady=(10, 5))
+        self.new_status_entry = ctk.CTkComboBox(form_frame, values=["On Progress", "Completed", "Not Started"], width=180)
+        self.new_status_entry.grid(row=7, column=0, padx=5, pady=(0, 10), sticky="ew")
+
+        button_frame = ctk.CTkFrame(self.task_creation_window, fg_color="transparent")
+        button_frame.pack(pady=(10, 10), anchor="center")
+
+        submit_button = ctk.CTkButton(button_frame, text="Add Task", command=self.add_task)
+        submit_button.pack(side="left", padx=(5, 5),  pady=(0,10))  
+
+        go_back_button = ctk.CTkButton(button_frame, text="Go Back", command=self.task_creation_window.destroy)
+        go_back_button.pack(side="left", padx=(5, 0), pady=(0,10)) 
 
     def add_task(self):
         task_name = self.task_name_entry.get()

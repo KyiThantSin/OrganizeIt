@@ -56,7 +56,7 @@ class TaskManagementSystem:
         button_frame = ctk.CTkFrame(self.root, corner_radius=10, fg_color="transparent")  
         button_frame.pack(padx=self.padx, pady=(10, 10), fill="x")
 
-        self.pending_list_label = ctk.CTkLabel(button_frame, text="Pending Lists", font=self.custom_label_font)
+        self.pending_list_label = ctk.CTkLabel(button_frame, text="All Tasks", font=self.custom_label_font)
         self.pending_list_label.pack(side="left", padx=(5, 10))
 
         self.add_task_button = ctk.CTkButton(button_frame, text="Add New Task", command=self.open_task_creation_form)
@@ -68,7 +68,7 @@ class TaskManagementSystem:
 
     def create_task_list_area(self):
         # Create a canvas and a vertical scrollbar
-        self.canvas = ctk.CTkCanvas(self.root)
+        self.canvas = ctk.CTkCanvas(self.root, bg=self.root.cget("bg"), highlightthickness=0)
         self.scrollbar = ctk.CTkScrollbar(self.root, orientation="vertical", command=self.canvas.yview)
         self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
 

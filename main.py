@@ -9,7 +9,7 @@ class TaskManagementSystem:
         self.root = root
         self.root.title("OrganizeIt")
         self.root.geometry("990x800")
-         
+        
         # padding
         self.padx = 80
         
@@ -25,6 +25,7 @@ class TaskManagementSystem:
         # variables
         self.filter_tag_var = ctk.StringVar()
         self.filter_status_var = ctk.StringVar()
+        self.custom_tags = ["Work", "Personal", "Urgent"]  # default tags
 
         self.create_filter_section()
         self.create_task_card()
@@ -36,7 +37,7 @@ class TaskManagementSystem:
         ctk.CTkLabel(filter_frame, text="Filter By Tags", font=self.custom_label_font).grid(row=0, column=0, padx=(10, 5), pady=(20, 5), sticky="w")
         ctk.CTkLabel(filter_frame, text="Filter By Status", font=self.custom_label_font).grid(row=0, column=1, padx=(10, 5), pady=(20, 5), sticky="w")
 
-        self.tag_entry = ctk.CTkComboBox(filter_frame, values=["Work", "Personal", "Urgent"], variable=self.filter_tag_var, width=180)
+        self.tag_entry = ctk.CTkComboBox(filter_frame, values=self.custom_tags, variable=self.filter_tag_var, width=180)
         self.tag_entry.grid(row=1, column=0, padx=(10, 5), pady=(10, 40), sticky="ew")
 
         self.status_entry = ctk.CTkComboBox(filter_frame, values=["On Progress", "Completed", "Not Started"], variable=self.filter_status_var, width=180)
@@ -51,12 +52,7 @@ class TaskManagementSystem:
         clear_button = ctk.CTkButton(button_frame, text="Clear", width=15)
         clear_button.pack(side="left", padx=(5, 5))
 
-        # layout 
-        filter_frame.grid_columnconfigure(0, weight=0)  
-        filter_frame.grid_columnconfigure(1, weight=0)  
-        filter_frame.grid_columnconfigure(2, weight=0)  
-        filter_frame.grid_columnconfigure(3, weight=0) 
-
+       
         # Add New Task button frame
         button_frame = ctk.CTkFrame(self.root, corner_radius=10, fg_color="transparent")  
         button_frame.pack(padx=self.padx, pady=(10, 10), fill="x")
@@ -66,11 +62,14 @@ class TaskManagementSystem:
 
         self.add_task_button = ctk.CTkButton(button_frame, text="Add New Task", command=self.open_task_creation_form)
         self.add_task_button.pack(side="right", padx=(10, 5))
+        
+        # Custom Tag button
+        add_custom_tag_button = ctk.CTkButton(button_frame, text="Add Custom Tag", command=self.open_custom_tag_creation_form)
+        add_custom_tag_button.pack(side="right", padx=(5, 5))
 
         # task list frame
         self.tasks_list_frame = ctk.CTkFrame(self.root, corner_radius=10, fg_color="transparent")
         self.tasks_list_frame.pack(padx=self.padx, pady=5, fill="both", expand=True)
-
 
     def create_task_card(self):
         card_frame = ctk.CTkFrame(self.tasks_list_frame, corner_radius=10)
@@ -120,7 +119,7 @@ class TaskManagementSystem:
 
         # Tag
         ctk.CTkLabel(form_frame, text="Tag", font=self.custom_label_font).grid(row=4, column=0, sticky="w", padx=5, pady=(10, 5))
-        self.new_tag_entry = ctk.CTkComboBox(form_frame, values=["Work", "Personal", "Urgent"], width=180)
+        self.new_tag_entry = ctk.CTkComboBox(form_frame, values=self.custom_tags, width=180)
         self.new_tag_entry.grid(row=5, column=0, padx=5, pady=(0, 10), sticky="ew")
         self.new_tag_entry.set(tag)
 
@@ -165,7 +164,7 @@ class TaskManagementSystem:
 
         # Tag
         ctk.CTkLabel(form_frame, text="Tag", font=self.custom_label_font).grid(row=4, column=0, sticky="w", padx=5, pady=(10, 5))
-        self.new_tag_entry = ctk.CTkComboBox(form_frame, values=["Work", "Personal", "Urgent"], width=180)
+        self.new_tag_entry = ctk.CTkComboBox(form_frame, values=self.custom_tags, width=180)
         self.new_tag_entry.grid(row=5, column=0, padx=5, pady=(0, 10), sticky="ew")
 
         # Status
@@ -191,6 +190,38 @@ class TaskManagementSystem:
         print(f"New Task Created: {task_name}, Description: {description}, Tag: {tag}, Status: {status}")
 
         self.task_creation_window.destroy()  # close modal after saving
+
+    def open_custom_tag_creation_form(self):
+        self.custom_tag_window = ctk.CTkToplevel(self.root)
+        self.custom_tag_window.title("Create Custom Tag")
+        self.custom_tag_window.geometry("300x200")
+
+        form_frame = ctk.CTkFrame(self.custom_tag_window, fg_color="transparent")
+        form_frame.pack(padx=30, pady=10, fill="both", expand=True)
+
+        ctk.CTkLabel(form_frame, text="Custom Tag Name", font=self.custom_label_font).grid(row=0, column=0, sticky="w", padx=5, pady=(10, 5))
+        self.custom_tag_entry = ctk.CTkEntry(form_frame, width=200)
+        self.custom_tag_entry.grid(row=1, column=0, padx=5, pady=(0, 10), sticky="ew")
+
+        button_frame = ctk.CTkFrame(self.custom_tag_window, fg_color="transparent")
+        button_frame.pack(pady=(10, 10), anchor="center")
+
+        save_button = ctk.CTkButton(button_frame, text="Save Tag", command=self.save_custom_tag)
+        save_button.pack(side="left", padx=(5, 5), pady=(0,10))  
+
+        go_back_button = ctk.CTkButton(button_frame, text="Go Back", command=self.custom_tag_window.destroy)
+        go_back_button.pack(side="left", padx=(5, 0), pady=(0,10)) 
+
+    def save_custom_tag(self):
+        custom_tag = self.custom_tag_entry.get()
+        if custom_tag and custom_tag not in self.custom_tags:  # check if the tag is not empty and not already in the list
+            self.custom_tags.append(custom_tag)
+            self.tag_entry.configure(values=self.custom_tags)  # update the combo box values
+            print(f"Custom Tag Added: {custom_tag}")
+        else:
+            print("Tag is either empty or already exists.")
+
+        self.custom_tag_window.destroy()  # close modal after saving
 
 def main():
     root = ctk.CTk()

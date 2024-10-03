@@ -12,7 +12,7 @@ class TaskManagementSystem:
         
         # padding
         self.padx = 80
-        
+
         # font 
         self.custom_title_font = ctk.CTkFont(family="Arial", size=24, weight="bold")
         self.custom_label_font = ctk.CTkFont(family="Arial", size=16, weight="bold")
@@ -20,7 +20,7 @@ class TaskManagementSystem:
 
         # app title 
         self.title_label = ctk.CTkLabel(self.root, text="OrganizeIt", font=self.custom_title_font)
-        self.title_label.pack(side="top", anchor="w", padx=self.padx, pady=40)
+        self.title_label.pack(side="top", anchor="w", padx=self.padx, pady=35)
 
         # variables
         self.filter_tag_var = ctk.StringVar()
@@ -28,7 +28,34 @@ class TaskManagementSystem:
         self.custom_tags = ["Work", "Personal", "Urgent"]  # default tags
 
         self.create_filter_section()
-        self.create_task_list_area()  # Modified to separate task list area
+
+        # Add New Task button frame
+        button_frame = ctk.CTkFrame(self.root, corner_radius=10, fg_color="transparent")  
+        button_frame.pack(padx=self.padx, pady=(10, 10), fill="x")
+
+        self.pending_list_label = ctk.CTkLabel(button_frame, text="All Tasks", font=self.custom_label_font)
+        self.pending_list_label.pack(side="left", padx=(5, 10))
+
+        self.add_task_button = ctk.CTkButton(button_frame, text="Add New Task", command=self.open_task_creation_form)
+        self.add_task_button.pack(side="right", padx=(10, 5))
+        
+        # Custom Tag button
+        add_custom_tag_button = ctk.CTkButton(button_frame, text="Add Custom Tag", command=self.open_custom_tag_creation_form)
+        add_custom_tag_button.pack(side="right", padx=(5, 5))
+
+        # task frame below "All Tasks"
+        self.main_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.main_frame.pack(fill="both", expand=True, padx=self.padx, pady=10)
+
+        self.left_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        self.left_frame.pack(side="left", fill="both", expand=True, pady=(0,5))
+        self.right_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        self.right_frame.pack(side="left", fill="both", expand=True, padx=(5, 0))
+
+        self.create_task_list_area(self.left_frame)
+
+        self.hello_world_label = ctk.CTkLabel(self.right_frame, text="Hello world", font=self.custom_label_font)
+        self.hello_world_label.pack(pady=20)
         
     def create_filter_section(self):
         filter_frame = ctk.CTkFrame(self.root, corner_radius=10)  
@@ -52,24 +79,10 @@ class TaskManagementSystem:
         clear_button = ctk.CTkButton(button_frame, text="Clear", width=15)
         clear_button.pack(side="left", padx=(5, 5))
 
-        # Add New Task button frame
-        button_frame = ctk.CTkFrame(self.root, corner_radius=10, fg_color="transparent")  
-        button_frame.pack(padx=self.padx, pady=(10, 10), fill="x")
-
-        self.pending_list_label = ctk.CTkLabel(button_frame, text="All Tasks", font=self.custom_label_font)
-        self.pending_list_label.pack(side="left", padx=(5, 10))
-
-        self.add_task_button = ctk.CTkButton(button_frame, text="Add New Task", command=self.open_task_creation_form)
-        self.add_task_button.pack(side="right", padx=(10, 5))
-        
-        # Custom Tag button
-        add_custom_tag_button = ctk.CTkButton(button_frame, text="Add Custom Tag", command=self.open_custom_tag_creation_form)
-        add_custom_tag_button.pack(side="right", padx=(5, 5))
-
-    def create_task_list_area(self):
+    def create_task_list_area(self, parent):
         # Create a canvas and a vertical scrollbar
-        self.canvas = ctk.CTkCanvas(self.root, bg=self.root.cget("bg"), highlightthickness=0)
-        self.scrollbar = ctk.CTkScrollbar(self.root, orientation="vertical", command=self.canvas.yview)
+        self.canvas = ctk.CTkCanvas(parent, bg=self.root.cget("bg"), highlightthickness=0)
+        self.scrollbar = ctk.CTkScrollbar(parent, orientation="vertical", command=self.canvas.yview)
         self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
 
         # Configure the scrollable frame
@@ -93,8 +106,8 @@ class TaskManagementSystem:
             self.create_task_card(f"Task {i+1}", f"This is the description for task {i+1}", "Work", "On Progress")
 
     def create_task_card(self, task_name="Task", description="Description", tag="Work", status="On Progress"):
-        card_frame = ctk.CTkFrame(self.scrollable_frame, corner_radius=10, width=1200)
-        card_frame.pack(padx=self.padx, pady=(10,10), fill="x")
+        card_frame = ctk.CTkFrame(self.scrollable_frame, corner_radius=10)
+        card_frame.pack(padx=5, pady=(10,10), fill="x")
 
         ctk.CTkLabel(card_frame, text=f"{task_name}", font=self.custom_task_label_font).grid(row=0, column=0, sticky="w", padx=20, pady=(10,5))
         ctk.CTkLabel(card_frame, text=f"Description: {description}").grid(row=1, column=0, sticky="w", padx=20)
@@ -222,6 +235,7 @@ class TaskManagementSystem:
             self.tag_entry.configure(values=self.custom_tags)  # Update the tag entry with new values
         self.custom_tag_window.destroy()
 
+# Run the application
 if __name__ == "__main__":
     root = ctk.CTk()
     app = TaskManagementSystem(root)

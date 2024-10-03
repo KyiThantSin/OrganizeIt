@@ -1,4 +1,6 @@
 import customtkinter as ctk
+from datetime import datetime
+from datetime import datetime, timedelta
 
 # theme
 ctk.set_appearance_mode("white")
@@ -26,6 +28,7 @@ class TaskManagementSystem:
         self.filter_tag_var = ctk.StringVar()
         self.filter_status_var = ctk.StringVar()
         self.custom_tags = ["Work", "Personal", "Urgent"]  # default tags
+        self.tasks = []  # to hold all tasks with their deadlines
 
         self.create_filter_section()
 
@@ -50,13 +53,19 @@ class TaskManagementSystem:
         self.left_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         self.left_frame.pack(side="left", fill="both", expand=True, pady=(0,5))
         self.right_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        self.right_frame.pack(side="left", fill="both", expand=True, padx=(5, 0))
+        self.right_frame.pack(side="left", fill="both", expand=True, padx=(0, 0))
 
         self.create_task_list_area(self.left_frame)
 
-        self.hello_world_label = ctk.CTkLabel(self.right_frame, text="Hello world", font=self.custom_label_font)
-        self.hello_world_label.pack(pady=20)
-        
+        # Section to show top 3 deadline tasks
+        self.deadline_tasks_label = ctk.CTkLabel(self.right_frame, text="Top 3 Deadline Tasks", font=self.custom_label_font)
+        self.deadline_tasks_label.pack(pady=(20, 5))
+
+        self.deadline_tasks_frame = ctk.CTkFrame(self.right_frame,fg_color="transparent")
+        self.deadline_tasks_frame.pack(pady=(0, 20))
+
+        self.show_top_deadline_tasks()
+
     def create_filter_section(self):
         filter_frame = ctk.CTkFrame(self.root, corner_radius=10)  
         filter_frame.pack(padx=self.padx, pady=(10, 10), fill="x")
@@ -99,13 +108,14 @@ class TaskManagementSystem:
         self.canvas.pack(side="left", fill="both", expand=True)
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
-        self.create_task_card()  # Create initial task card
+        # Create initial task card
+        self.create_task_card()  
 
         # Create additional task cards for demonstration
         for i in range(10):  # Add more tasks for scrolling
             self.create_task_card(f"Task {i+1}", f"This is the description for task {i+1}", "Work", "On Progress")
 
-    def create_task_card(self, task_name="Task", description="Description", tag="Work", status="On Progress"):
+    def create_task_card(self, task_name="Task", description="Description", tag="Work", status="On Progress", deadline=None):
         card_frame = ctk.CTkFrame(self.scrollable_frame, corner_radius=10)
         card_frame.pack(padx=5, pady=(10,10), fill="x")
 
@@ -113,15 +123,20 @@ class TaskManagementSystem:
         ctk.CTkLabel(card_frame, text=f"Description: {description}").grid(row=1, column=0, sticky="w", padx=20)
         ctk.CTkLabel(card_frame, text=f"Tag: {tag}").grid(row=2, column=0, sticky="w", padx=20)
         ctk.CTkLabel(card_frame, text=f"Status: {status}").grid(row=3, column=0, sticky="w", padx=20)
-        
-        edit_button = ctk.CTkButton(card_frame, text="Edit", width=100, command=lambda: self.open_task_edit_form(task_name, description, tag, status))
-        edit_button.grid(row=4, column=0, padx=10, pady=(5, 10), sticky="e")
+        if deadline:
+            ctk.CTkLabel(card_frame, text=f"Deadline: {deadline.strftime('%Y-%m-%d')}").grid(row=4, column=0, sticky="w", padx=20)
+
+        edit_button = ctk.CTkButton(card_frame, text="Edit", width=100, command=lambda: self.open_task_edit_form(task_name, description, tag, status, deadline))
+        edit_button.grid(row=5, column=0, padx=10, pady=(5, 10), sticky="e")
 
         delete_button = ctk.CTkButton(card_frame, text="Delete", width=100)
-        delete_button.grid(row=4, column=1, padx=10, pady=(5, 10), sticky="e")
+        delete_button.grid(row=5, column=1, padx=10, pady=(5, 10), sticky="e")
 
         # layout
         card_frame.grid_columnconfigure(0, weight=1)
+
+        # Store task details
+        self.tasks.append({"name": task_name, "description": description, "tag": tag, "status": status, "deadline": deadline})
 
     def open_task_creation_form(self):
         self.task_creation_window = ctk.CTkToplevel(self.root)
@@ -130,112 +145,116 @@ class TaskManagementSystem:
 
         self.create_task_form(self.task_creation_window)
 
-    def open_task_edit_form(self, task_name, description, tag, status):
+    def open_task_edit_form(self, task_name, description, tag, status, deadline):
         self.task_edit_window = ctk.CTkToplevel(self.root)
         self.task_edit_window.title("Edit Task")
         self.task_edit_window.geometry("400x400")
 
-        form_frame = ctk.CTkFrame(self.task_edit_window, fg_color="transparent")
-        form_frame.pack(padx=30, pady=10, fill="both", expand=True)
+        self.create_task_form(self.task_edit_window, task_name, description, tag, status, deadline)
 
-        # Pre-populating the form with task details
-        ctk.CTkLabel(form_frame, text="Task Name", font=self.custom_label_font).grid(row=0, column=0, sticky="w", padx=5, pady=(10, 5))
-        self.task_name_entry = ctk.CTkEntry(form_frame, width=300)
-        self.task_name_entry.grid(row=1, column=0, padx=5, pady=(0, 10), sticky="ew")
-        self.task_name_entry.insert(0, task_name)
+    def create_task_form(self, parent, task_name="", description="", tag="", status="", deadline=None):
+        # Create labels and entries for the form
+        ctk.CTkLabel(parent, text="Task Name").pack(pady=(10, 5))
+        name_entry = ctk.CTkEntry(parent)
+        name_entry.pack(pady=(0, 5))
+        name_entry.insert(0, task_name)
 
-        # Description
-        ctk.CTkLabel(form_frame, text="Description", font=self.custom_label_font).grid(row=2, column=0, sticky="w", padx=5, pady=(10, 5))
-        self.description_entry = ctk.CTkEntry(form_frame, width=300)
-        self.description_entry.grid(row=3, column=0, padx=5, pady=(0, 10), sticky="ew")
-        self.description_entry.insert(0, description)
+        ctk.CTkLabel(parent, text="Description").pack(pady=(10, 5))
+        description_entry = ctk.CTkEntry(parent)
+        description_entry.pack(pady=(0, 5))
+        description_entry.insert(0, description)
 
-        # Tag
-        ctk.CTkLabel(form_frame, text="Tag", font=self.custom_label_font).grid(row=4, column=0, sticky="w", padx=5, pady=(10, 5))
-        self.new_tag_entry = ctk.CTkComboBox(form_frame, values=self.custom_tags)
-        self.new_tag_entry.grid(row=5, column=0, padx=5, pady=(0, 10), sticky="ew")
-        self.new_tag_entry.set(tag)
+        ctk.CTkLabel(parent, text="Tag").pack(pady=(10, 5))
+        tag_entry = ctk.CTkEntry(parent)
+        tag_entry.pack(pady=(0, 5))
+        tag_entry.insert(0, tag)
 
-        # Status
-        ctk.CTkLabel(form_frame, text="Status", font=self.custom_label_font).grid(row=6, column=0, sticky="w", padx=5, pady=(10, 5))
-        self.status_entry = ctk.CTkComboBox(form_frame, values=["On Progress", "Completed", "Not Started"])
-        self.status_entry.grid(row=7, column=0, padx=5, pady=(0, 10), sticky="ew")
-        self.status_entry.set(status)
+        ctk.CTkLabel(parent, text="Status").pack(pady=(10, 5))
+        status_entry = ctk.CTkEntry(parent)
+        status_entry.pack(pady=(0, 5))
+        status_entry.insert(0, status)
 
-        # Save and Cancel buttons
-        button_frame = ctk.CTkFrame(form_frame)
-        button_frame.grid(row=8, column=0, padx=5, pady=(10, 10), sticky="e")
-        save_button = ctk.CTkButton(button_frame, text="Save", command=self.save_task_edit)
-        save_button.pack(side="left", padx=(5, 5))
-        cancel_button = ctk.CTkButton(button_frame, text="Cancel", command=self.task_edit_window.destroy)
-        cancel_button.pack(side="left", padx=(5, 5))
+        ctk.CTkLabel(parent, text="Deadline (YYYY-MM-DD)").pack(pady=(10, 5))
+        deadline_entry = ctk.CTkEntry(parent)
+        deadline_entry.pack(pady=(0, 5))
+        if deadline:
+            deadline_entry.insert(0, deadline.strftime('%Y-%m-%d'))
 
-    def create_task_form(self, parent):
-        form_frame = ctk.CTkFrame(parent, fg_color="transparent")
-        form_frame.pack(padx=30, pady=10, fill="both", expand=True)
+        submit_button = ctk.CTkButton(parent, text="Submit", command=lambda: self.submit_task(name_entry.get(), description_entry.get(), tag_entry.get(), status_entry.get(), deadline_entry.get()))
+        submit_button.pack(pady=(20, 5))
 
-        ctk.CTkLabel(form_frame, text="Task Name", font=self.custom_label_font).grid(row=0, column=0, sticky="w", padx=5, pady=(10, 5))
-        self.task_name_entry = ctk.CTkEntry(form_frame, width=300)
-        self.task_name_entry.grid(row=1, column=0, padx=5, pady=(0, 10), sticky="ew")
+    def submit_task(self, task_name, description, tag, status, deadline_str):
+        # Convert the deadline string to a date object
+        deadline = datetime.strptime(deadline_str, '%Y-%m-%d') if deadline_str else None
+        
+        # Create the task card
+        self.create_task_card(task_name, description, tag, status, deadline)
 
-        ctk.CTkLabel(form_frame, text="Description", font=self.custom_label_font).grid(row=2, column=0, sticky="w", padx=5, pady=(10, 5))
-        self.description_entry = ctk.CTkEntry(form_frame, width=300)
-        self.description_entry.grid(row=3, column=0, padx=5, pady=(0, 10), sticky="ew")
+        # Show the top 3 deadline tasks
+        self.show_top_deadline_tasks()
 
-        ctk.CTkLabel(form_frame, text="Tag", font=self.custom_label_font).grid(row=4, column=0, sticky="w", padx=5, pady=(10, 5))
-        self.new_tag_entry = ctk.CTkComboBox(form_frame, values=self.custom_tags)
-        self.new_tag_entry.grid(row=5, column=0, padx=5, pady=(0, 10), sticky="ew")
+    def show_top_deadline_tasks(self):
+        # Clear previous deadline tasks
+        for widget in self.deadline_tasks_frame.winfo_children():
+            widget.destroy()
 
-        ctk.CTkLabel(form_frame, text="Status", font=self.custom_label_font).grid(row=6, column=0, sticky="w", padx=5, pady=(10, 5))
-        self.status_entry = ctk.CTkComboBox(form_frame, values=["On Progress", "Completed", "Not Started"])
-        self.status_entry.grid(row=7, column=0, padx=5, pady=(0, 10), sticky="ew")
+        # Static data for testing purposes
+        static_tasks = [
+            {"name": "Task 1", "deadline": datetime.now() + timedelta(days=3, hours=3)},
+            {"name": "Task 2", "deadline": datetime.now() + timedelta(days=2, hours=1)},
+            {"name": "Task 3", "deadline": datetime.now() + timedelta(days=1, hours=12)},
+        ]
 
-        button_frame = ctk.CTkFrame(form_frame)
-        button_frame.grid(row=8, column=0, padx=5, pady=(10, 10), sticky="e")
-        add_button = ctk.CTkButton(button_frame, text="Add Task", command=self.add_task)
-        add_button.pack(side="left", padx=(5, 5))
-        cancel_button = ctk.CTkButton(button_frame, text="Cancel", command=parent.destroy)
-        cancel_button.pack(side="left", padx=(5, 5))
+        # Sort static tasks by deadline
+        deadline_tasks = sorted(static_tasks, key=lambda x: x["deadline"])
 
-    def add_task(self):
-        task_name = self.task_name_entry.get()
-        description = self.description_entry.get()
-        tag = self.new_tag_entry.get()
-        status = self.status_entry.get()
-        self.create_task_card(task_name, description, tag, status)
-        self.task_creation_window.destroy()
+        # Create task cards in a grid layout
+        for index, task in enumerate(deadline_tasks):
+            # Create a card frame for each task
+            card_frame = ctk.CTkFrame(self.deadline_tasks_frame, corner_radius=10, fg_color="#F5FFFA")
+            
+            # Pack the card frame into the grid
+            card_frame.grid(row=0, column=index, padx=10, pady=(5, 10), sticky="nsew")
 
-    def save_task_edit(self):
-        # Logic for saving the edited task (not implemented in this example)
-        self.task_edit_window.destroy()
+            # Task name and deadline
+            task_label = ctk.CTkLabel(card_frame, text=f"Task: {task['name']}", font=self.custom_task_label_font)
+            task_label.pack(pady=(5, 0), padx=10)
+
+            deadline_label = ctk.CTkLabel(card_frame, text=f"Deadline: {task['deadline'].strftime('%Y-%m-%d %H:%M')}")
+            deadline_label.pack(pady=(0, 5), padx=10)
+
+            # Calculate time left
+            time_left = task['deadline'] - datetime.now()
+            days_left = time_left.days
+            hours_left = time_left.seconds // 3600
+            minutes_left = (time_left.seconds % 3600) // 60
+
+            # Display time left
+            time_left_text = f"{days_left} days {hours_left} hours left" if days_left >= 0 else "Deadline passed"
+            time_left_label = ctk.CTkLabel(card_frame, text=time_left_text)
+            time_left_label.pack(pady=(5, 5), padx=10)
+
+        # Adjust grid weights for equal spacing
+        for i in range(len(deadline_tasks)):
+            self.deadline_tasks_frame.grid_columnconfigure(i, weight=1)
 
     def open_custom_tag_creation_form(self):
         self.custom_tag_window = ctk.CTkToplevel(self.root)
         self.custom_tag_window.title("Add Custom Tag")
-        self.custom_tag_window.geometry("400x400")
+        self.custom_tag_window.geometry("400x200")
 
-        form_frame = ctk.CTkFrame(self.custom_tag_window, fg_color="transparent")
-        form_frame.pack(padx=30, pady=10, fill="both", expand=True)
+        ctk.CTkLabel(self.custom_tag_window, text="Enter Custom Tag:").pack(pady=(10, 5))
+        custom_tag_entry = ctk.CTkEntry(self.custom_tag_window)
+        custom_tag_entry.pack(pady=(0, 5))
 
-        ctk.CTkLabel(form_frame, text="Tag Name", font=self.custom_label_font).grid(row=0, column=0, sticky="w", padx=5, pady=(10, 5))
-        self.custom_tag_entry = ctk.CTkEntry(form_frame, width=300)
-        self.custom_tag_entry.grid(row=1, column=0, padx=5, pady=(0, 10), sticky="ew")
+        submit_button = ctk.CTkButton(self.custom_tag_window, text="Submit", command=lambda: self.add_custom_tag(custom_tag_entry.get()))
+        submit_button.pack(pady=(20, 5))
 
-        button_frame = ctk.CTkFrame(form_frame)
-        button_frame.grid(row=2, column=0, padx=5, pady=(10, 10), sticky="e")
-        add_button = ctk.CTkButton(button_frame, text="Add Tag", command=self.add_custom_tag)
-        add_button.pack(side="left", padx=(5, 5))
-        cancel_button = ctk.CTkButton(button_frame, text="Cancel", command=self.custom_tag_window.destroy)
-        cancel_button.pack(side="left", padx=(5, 5))
+    def add_custom_tag(self, tag):
+        if tag and tag not in self.custom_tags:
+            self.custom_tags.append(tag)
+            self.tag_entry.configure(values=self.custom_tags)
 
-    def add_custom_tag(self):
-        custom_tag = self.custom_tag_entry.get()
-        if custom_tag and custom_tag not in self.custom_tags:
-            self.custom_tags.append(custom_tag)
-            self.tag_entry.configure(values=self.custom_tags)  # Update the tag entry with new values
-        self.custom_tag_window.destroy()
-
-# Run the application
 if __name__ == "__main__":
     root = ctk.CTk()
     app = TaskManagementSystem(root)

@@ -1,7 +1,6 @@
 import customtkinter as ctk
 from datetime import datetime, timedelta
 
-# theme
 ctk.set_appearance_mode("white")
 ctk.set_default_color_theme("dark-blue")
 
@@ -12,6 +11,42 @@ class Task:
         self.tag = tag
         self.status = status
         self.deadline = deadline
+
+    def get_display_info(self):
+        return {
+            "name": self.name,
+            "description": self.description,
+            "tag": self.tag,
+            "status": self.status,
+            "deadline": self.deadline
+        }
+
+class WorkTask(Task):
+    def __init__(self, name, description, deadline=None):
+        super().__init__(name, description, tag="Work", status="Not Started", deadline=deadline)
+
+    def get_display_info(self):
+        task_info = super().get_display_info()
+        task_info["priority"] = "High"  
+        return task_info
+
+class PersonalTask(Task):
+    def __init__(self, name, description, deadline=None):
+        super().__init__(name, description, tag="Personal", status="Not Started", deadline=deadline)
+
+    def get_display_info(self):
+        task_info = super().get_display_info()
+        task_info["priority"] = "Low"  # Personal tasks have lower priority
+        return task_info
+
+class UrgentTask(Task):
+    def __init__(self, name, description, deadline=None):
+        super().__init__(name, description, tag="Urgent", status="Not Started", deadline=deadline)
+
+    def get_display_info(self):
+        task_info = super().get_display_info()
+        task_info["priority"] = "Critical" 
+        return task_info
 
 class TaskManagementSystem:
     def __init__(self, root):
@@ -34,7 +69,7 @@ class TaskManagementSystem:
         # variables
         self.filter_tag_var = ctk.StringVar()
         self.filter_status_var = ctk.StringVar()
-        self.custom_tags = ["Work", "Personal", "Urgent"]  # default tags
+        self.custom_tags = ["Work", "Personal", "Urgent"]  
         self.tasks = []  # to hold all tasks with their deadlines
 
         self.create_filter_section()
@@ -107,20 +142,16 @@ class TaskManagementSystem:
             lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
         )
 
-        # Create window in the canvas
         self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
 
-        # Pack the canvas and scrollbar
         self.scrollbar.pack(side="right", fill="y")
         self.canvas.pack(side="left", fill="both", expand=True)
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
-        # Create initial task card
-        self.create_task_card()  
+        self.create_task_card(task_name="Sample Task", description="This is a sample description", tag="Work", status="On Progress")
 
-        # Create additional task cards for demonstration
-        for i in range(10):  # Add more tasks for scrolling
-            self.create_task_card(f"Task {i+1}", f"This is the description for task {i+1}", "Work", "On Progress")
+        for i in range(10):  
+            self.create_task_card(task_name=f"Task {i+1}", description=f"This is the description for task {i+1}", tag="Work", status="On Progress")
 
     def create_task_card(self, task_name="Task", description="Description", tag="Work", status="On Progress", deadline=None):
         card_frame = ctk.CTkFrame(self.scrollable_frame, corner_radius=10)
@@ -183,6 +214,7 @@ class TaskManagementSystem:
         save_button = ctk.CTkButton(parent, text="Save", command=self.save_task)
         save_button.grid(row=5, column=0, padx=10, pady=10)
 
+
     def save_task(self):
         task_name = self.task_name_entry.get()
         description = self.task_description_entry.get()
@@ -195,12 +227,21 @@ class TaskManagementSystem:
         else:
             deadline = None
 
-        self.create_task_card(task_name, description, tag, status, deadline)
+        # Instantiate the appropriate task type based on the tag
+        if tag == "Work":
+            task = WorkTask(task_name, description, deadline)
+        elif tag == "Personal":
+            task = PersonalTask(task_name, description, deadline)
+        elif tag == "Urgent":
+            task = UrgentTask(task_name, description, deadline)
+        else:
+            task = Task(task_name, description, tag, status, deadline)
 
+        self.create_task_card(task)
         self.task_creation_window.destroy()  # Close the creation window
 
+
     def open_custom_tag_creation_form(self):
-        # You can implement this form to add custom tags here
         tag_creation_window = ctk.CTkToplevel(self.root)
         tag_creation_window.title("Create Custom Tag")
         tag_creation_window.geometry("300x200")
@@ -225,7 +266,6 @@ class TaskManagementSystem:
         for widget in self.deadline_tasks_frame.winfo_children():
             widget.destroy()
 
-        # Static data for testing purposes
         static_tasks = [
             {"name": "Task 1", "deadline": datetime.now() + timedelta(days=3, hours=3)},
             {"name": "Task 2", "deadline": datetime.now() + timedelta(days=2, hours=1)},
@@ -239,10 +279,8 @@ class TaskManagementSystem:
             # Create a card frame for each task
             card_frame = ctk.CTkFrame(self.deadline_tasks_frame, corner_radius=10, fg_color="#F5FFFA")
             
-            # Pack the card frame into the grid
             card_frame.grid(row=0, column=index, padx=10, pady=(5, 10), sticky="nsew")
 
-            # Task name and deadline
             task_label = ctk.CTkLabel(card_frame, text=f"Task: {task['name']}", font=self.custom_task_label_font)
             task_label.pack(pady=(5, 0), padx=10)
 
@@ -259,7 +297,7 @@ class TaskManagementSystem:
             time_left_text = f"{days_left} days {hours_left} hours left" if days_left >= 0 else "Deadline passed"
             time_left_label = ctk.CTkLabel(card_frame, text=time_left_text)
             time_left_label.pack(pady=(5, 5), padx=10)
-        # Adjust grid weights for equal spacing
+
         for i in range(len(deadline_tasks)):
             self.deadline_tasks_frame.grid_columnconfigure(i, weight=1)
 

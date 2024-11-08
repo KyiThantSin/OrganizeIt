@@ -135,9 +135,6 @@ class TaskManagementSystem:
         self.view_pie_chart_button = ctk.CTkButton(self.pie_chart_frame, text="View Pie Chart", command=lambda: draw_pie_chart(task_data))
         self.view_pie_chart_button.pack(side="left")
 
-
-
-
     def create_filter_section(self):
         filter_frame = ctk.CTkFrame(self.root, corner_radius=10)  
         filter_frame.pack(padx=self.padx, pady=(10, 10), fill="x")

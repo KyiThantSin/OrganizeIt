@@ -1,9 +1,16 @@
 import customtkinter as ctk
 from datetime import datetime, timedelta
+from pie_chart import draw_pie_chart
 
 ctk.set_appearance_mode("white")
 ctk.set_default_color_theme("dark-blue")
 
+task_data = {
+    "All Tasks": 100,
+    "Doing": 30,
+    "Completed": 50,
+    "Processing": 20
+}
 class Task:
     def __init__(self, name, description, tag, status, deadline=None):
         self.name = name
@@ -107,6 +114,7 @@ class TaskManagementSystem:
         self.deadline_tasks_frame.pack(pady=(0, 20))
 
         self.show_top_deadline_tasks()
+        draw_pie_chart(task_data)
 
     def create_filter_section(self):
         filter_frame = ctk.CTkFrame(self.root, corner_radius=10)  
@@ -304,7 +312,6 @@ class TaskManagementSystem:
         refresh_tag_list()
 
     def show_top_deadline_tasks(self):
-         # Clear previous deadline tasks
         for widget in self.deadline_tasks_frame.winfo_children():
             widget.destroy()
 

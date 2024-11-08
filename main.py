@@ -131,7 +131,6 @@ class TaskManagementSystem:
         clear_button.pack(side="left", padx=(5, 5))
 
     def create_task_list_area(self, parent):
-        # Create a canvas and a vertical scrollbar
         self.canvas = ctk.CTkCanvas(parent, bg=self.root.cget("bg"), highlightthickness=0)
         self.scrollbar = ctk.CTkScrollbar(parent, orientation="vertical", command=self.canvas.yview)
         self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
@@ -191,29 +190,45 @@ class TaskManagementSystem:
         self.create_task_form(self.task_edit_window, task_name, description, tag, status, deadline)
 
     def create_task_form(self, parent, task_name=None, description=None, tag=None, status=None, deadline=None):
-        self.task_name_entry = ctk.CTkEntry(parent)
-        self.task_name_entry.grid(row=0, column=0, padx=10, pady=10)
-        self.task_name_entry.insert(0, task_name if task_name else "Task Name")
+        form_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        form_frame.place(relx=0.5, anchor="n")  # Centered horizontally
 
-        self.task_description_entry = ctk.CTkEntry(parent)
-        self.task_description_entry.grid(row=1, column=0, padx=10, pady=10)
-        self.task_description_entry.insert(0, description if description else "Task Description")
+        # name
+        task_name_label = ctk.CTkLabel(form_frame, text="Task Name")
+        task_name_label.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="w")
+        self.task_name_entry = ctk.CTkEntry(form_frame, width=300)
+        self.task_name_entry.grid(row=1, column=0, padx=10, pady=10)
+        self.task_name_entry.insert(0, task_name if task_name else "Enter task name")
+        # description
+        task_description_label = ctk.CTkLabel(form_frame, text="Task Description")
+        task_description_label.grid(row=2, column=0, padx=10, pady=(10, 0), sticky="w")
+        self.task_description_entry = ctk.CTkEntry(form_frame, width=300)
+        self.task_description_entry.grid(row=3, column=0, padx=10, pady=10)
+        self.task_description_entry.insert(0, description if description else "Enter task description")
 
-        self.task_tag_entry = ctk.CTkComboBox(parent, values=self.custom_tags)
-        self.task_tag_entry.grid(row=2, column=0, padx=10, pady=10)
+        # tag 
+        task_tag_label = ctk.CTkLabel(form_frame, text="Task Tag")
+        task_tag_label.grid(row=4, column=0, padx=10, pady=(10, 0), sticky="w")
+        self.task_tag_entry = ctk.CTkComboBox(form_frame, values=self.custom_tags, width=300)
+        self.task_tag_entry.grid(row=5, column=0, padx=10, pady=10)
         self.task_tag_entry.set(tag if tag else "Work")
 
-        self.task_status_entry = ctk.CTkComboBox(parent, values=["On Progress", "Completed", "Not Started"])
-        self.task_status_entry.grid(row=3, column=0, padx=10, pady=10)
+        # status 
+        task_status_label = ctk.CTkLabel(form_frame, text="Task Status")
+        task_status_label.grid(row=6, column=0, padx=10, pady=(10, 0), sticky="w")
+        self.task_status_entry = ctk.CTkComboBox(form_frame, values=["On Progress", "Completed", "Not Started"], width=300)
+        self.task_status_entry.grid(row=7, column=0, padx=10, pady=10)
         self.task_status_entry.set(status if status else "Not Started")
 
-        self.task_deadline_entry = ctk.CTkEntry(parent)
-        self.task_deadline_entry.grid(row=4, column=0, padx=10, pady=10)
+        # deadline 
+        task_deadline_label = ctk.CTkLabel(form_frame, text="Task Deadline")
+        task_deadline_label.grid(row=8, column=0, padx=10, pady=(10, 0), sticky="w")
+        self.task_deadline_entry = ctk.CTkEntry(form_frame, width=300)
+        self.task_deadline_entry.grid(row=9, column=0, padx=10, pady=10)
         self.task_deadline_entry.insert(0, deadline.strftime("%Y-%m-%d") if deadline else "yyyy-mm-dd")
 
-        save_button = ctk.CTkButton(parent, text="Save", command=self.save_task)
-        save_button.grid(row=5, column=0, padx=10, pady=10)
-
+        save_button = ctk.CTkButton(form_frame, text="Save", command=self.save_task)
+        save_button.grid(row=10, column=0, padx=10, pady=10)
 
     def save_task(self):
         task_name = self.task_name_entry.get()

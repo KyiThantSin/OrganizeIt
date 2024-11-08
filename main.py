@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from datetime import datetime, timedelta
 from pie_chart import draw_pie_chart
+from tasks_summary import TaskSummaryComponent
 
 ctk.set_appearance_mode("white")
 ctk.set_default_color_theme("dark-blue")
@@ -11,6 +12,13 @@ task_data = {
     "Completed": 50,
     "Processing": 20
 }
+
+tasks = [
+    {"name": "Task 1", "status": "processing"},
+    {"name": "Task 2", "status": "completed"},
+    {"name": "Task 3", "status": "processing"},
+    {"name": "Task 4", "status": "completed"},
+]
 class Task:
     def __init__(self, name, description, tag, status, deadline=None):
         self.name = name
@@ -114,7 +122,21 @@ class TaskManagementSystem:
         self.deadline_tasks_frame.pack(pady=(0, 20))
 
         self.show_top_deadline_tasks()
-        draw_pie_chart(task_data)
+        task_summary = TaskSummaryComponent(self.right_frame, tasks)
+        task_summary.pack(padx=20, pady=5, anchor="w")
+        task_summary.configure(fg_color="transparent")
+        # pie chart
+        self.pie_chart_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
+        self.pie_chart_frame.pack(pady=(20, 5), padx=20, anchor="w", fill="x")
+
+        self.pie_chart_label = ctk.CTkLabel(self.pie_chart_frame, text="If you want to see data in a pie chart, click here:", fg_color="transparent")
+        self.pie_chart_label.pack(side="left", padx=(0, 10))
+
+        self.view_pie_chart_button = ctk.CTkButton(self.pie_chart_frame, text="View Pie Chart", command=lambda: draw_pie_chart(task_data))
+        self.view_pie_chart_button.pack(side="left")
+
+
+
 
     def create_filter_section(self):
         filter_frame = ctk.CTkFrame(self.root, corner_radius=10)  
@@ -186,14 +208,14 @@ class TaskManagementSystem:
     def open_task_creation_form(self):
         self.task_creation_window = ctk.CTkToplevel(self.root)
         self.task_creation_window.title("Create New Task")
-        self.task_creation_window.geometry("400x400")
+        self.task_creation_window.geometry("600x600")
 
         self.create_task_form(self.task_creation_window)
 
     def open_task_edit_form(self, task_name, description, tag, status, deadline):
         self.task_edit_window = ctk.CTkToplevel(self.root)
         self.task_edit_window.title(f"Edit Task: {task_name}")
-        self.task_edit_window.geometry("400x400")
+        self.task_edit_window.geometry("600x600")
 
         self.create_task_form(self.task_edit_window, task_name, description, tag, status, deadline)
 
@@ -266,7 +288,7 @@ class TaskManagementSystem:
     def open_custom_tag_creation_form(self):
         tag_creation_window = ctk.CTkToplevel(self.root)
         tag_creation_window.title("Create Custom Tag")
-        tag_creation_window.geometry("300x300")
+        tag_creation_window.geometry("600x600")
 
         label = ctk.CTkLabel(tag_creation_window, text="Enter custom tag name:", font=self.custom_label_font)
         label.pack(pady=10) 
@@ -323,9 +345,7 @@ class TaskManagementSystem:
 
         deadline_tasks = sorted(static_tasks, key=lambda x: x["deadline"])
 
-        # Create task cards in a grid layout
         for index, task in enumerate(deadline_tasks):
-            # Create a card frame for each task
             card_frame = ctk.CTkFrame(self.deadline_tasks_frame, corner_radius=10, fg_color="#F5FFFA")
             
             card_frame.grid(row=0, column=index, padx=10, pady=(5, 10), sticky="nsew")

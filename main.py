@@ -2,6 +2,7 @@ import customtkinter as ctk
 from datetime import datetime, timedelta
 from pie_chart import draw_pie_chart
 from tasks_summary import TaskSummaryComponent
+from zodb import ZODBConnection
 
 ctk.set_appearance_mode("white")
 ctk.set_default_color_theme("dark-blue")
@@ -62,7 +63,6 @@ class UrgentTask(Task):
         task_info = super().get_display_info()
         task_info["priority"] = "Critical" 
         return task_info
-
 class TaskManagementSystem:
     def __init__(self, root):
         self.root = root
@@ -370,4 +370,12 @@ class TaskManagementSystem:
 if __name__ == "__main__":
     root = ctk.CTk()
     app = TaskManagementSystem(root)
+    db_file = "mydatabase.fs"  
+
+    zodb = ZODBConnection(db_file)
+
+    zodb.open()
+    
+    connection = zodb.get_connection() 
+    zodb.close()
     root.mainloop()

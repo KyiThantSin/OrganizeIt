@@ -215,7 +215,7 @@ class TaskManagementSystem:
         if deadline:
             ctk.CTkLabel(card_frame, text=f"Deadline: {deadline.strftime('%Y-%m-%d')}").grid(row=4, column=0, sticky="w", padx=20)
 
-        edit_button = ctk.CTkButton(card_frame, text="Edit", width=100, command=lambda: self.open_task_edit_form(task_name, description, tag, status, deadline))
+        edit_button = ctk.CTkButton(card_frame, text="Edit", width=100, command=lambda: self.open_task_edit_form(task_id, task_name, description, tag, status, deadline))
         edit_button.grid(row=5, column=0, padx=10, pady=(5, 10), sticky="e")
 
         delete_button = ctk.CTkButton(card_frame, text="Delete", width=100, command=lambda: delete_task( task_id, self.zodb_connection, self))
@@ -235,14 +235,23 @@ class TaskManagementSystem:
 
         self.create_task_form(self.task_creation_window)
 
-    def open_task_edit_form(self, task_name, description, tag, status, deadline):
+    def open_task_edit_form(self, task_id, task_name, description, tag, status, deadline):
         self.task_edit_window = ctk.CTkToplevel(self.root)
         self.task_edit_window.title(f"Edit Task: {task_name}")
         self.task_edit_window.geometry("600x600")
 
-        self.create_task_form(self.task_edit_window, task_name, description, tag, status, deadline)
+        # Pass task_id to create_task_form
+        self.create_task_form(
+            parent=self.task_edit_window,
+            task_id=task_id,
+            task_name=task_name,
+            description=description,
+            tag=tag,
+            status=status,
+            deadline=deadline
+        )
 
-    def create_task_form(self, parent, task_name=None, description=None, tag=None, status=None, deadline=None):
+    def create_task_form(self, parent, task_id=None, task_name=None, description=None, tag=None, status=None, deadline=None):
         form_frame = ctk.CTkFrame(parent, fg_color="transparent")
         form_frame.place(relx=0.5, anchor="n")  # Centered horizontally
 
@@ -280,11 +289,10 @@ class TaskManagementSystem:
         self.task_deadline_entry.grid(row=9, column=0, padx=10, pady=10)
         self.task_deadline_entry.insert(0, deadline.strftime("%Y-%m-%d") if deadline else "yyyy-mm-dd")
 
-        save_button = ctk.CTkButton(form_frame, text="Save", command=self.save_task)
+        save_button = ctk.CTkButton(form_frame, text="Save", command=lambda: self.save_task(task_id))
         save_button.grid(row=10, column=0, padx=10, pady=10)
 
-    def save_task(self):
-        task_id = str(uuid.uuid4())
+    def save_task(self, task_id=None):
         task_name = self.task_name_entry.get()
         description = self.task_description_entry.get()
         tag = self.task_tag_entry.get()
@@ -296,34 +304,38 @@ class TaskManagementSystem:
         else:
             deadline = None
 
-        # Instantiate the task based on the tag
-        if tag == "Work":
-            task = WorkTask(task_id, task_name, description, deadline)
-        elif tag == "Personal":
-            task = PersonalTask(task_id, task_name, description, deadline)
-        elif tag == "Urgent":
-            task = UrgentTask(task_id, task_name, description, deadline)
+        if task_id:
+            edit_task(
+                task_id=task_id,
+                task_name=task_name,
+                description=description,
+                tag=tag,
+                status=status,
+                deadline=deadline,
+                zodb_connection=self.zodb_connection
+            )
+            self.task_edit_window.destroy()
         else:
-            task = Task(task_id, task_name, description, tag, status, deadline)
+            # Otherwise, create a new task
+            new_task_id = str(uuid.uuid4())
+            if tag == "Work":
+                task = WorkTask(new_task_id, task_name, description, deadline)
+            elif tag == "Personal":
+                task = PersonalTask(new_task_id, task_name, description, deadline)
+            elif tag == "Urgent":
+                task = UrgentTask(new_task_id, task_name, description, deadline)
+            else:
+                task = Task(new_task_id, task_name, description, tag, status, deadline)
 
-        # Save to ZODB
-        connection = self.zodb_connection.get_connection()
-        root = connection.root()
-        if "tasks" not in root:
-            root["tasks"] = {}
-        root["tasks"][task_id] = task
-        transaction.commit()
-
-        # task card
-        self.create_task_card(
-            task_id=task.id,
-            task_name=task.name,
-            description=task.description,
-            tag=task.tag,
-            status=task.status,
-            deadline=task.deadline
-        )
-        self.task_creation_window.destroy()
+            # Save to ZODB
+            connection = self.zodb_connection.get_connection()
+            root = connection.root()
+            if "tasks" not in root:
+                root["tasks"] = {}
+            root["tasks"][new_task_id] = task
+            transaction.commit()
+            self.task_creation_window.destroy()    
+        self.refresh_task_list()
 
     def open_custom_tag_creation_form(self):
         tag_creation_window = ctk.CTkToplevel(self.root)

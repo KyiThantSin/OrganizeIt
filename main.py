@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from pie_chart import draw_pie_chart
 from tasks_summary import TaskSummaryComponent
 from zodb import ZODBConnection
+from persistent import Persistent
+import transaction
 
 ctk.set_appearance_mode("white")
 ctk.set_default_color_theme("dark-blue")
@@ -20,7 +22,7 @@ tasks = [
     {"name": "Task 3", "status": "processing"},
     {"name": "Task 4", "status": "completed"},
 ]
-class Task:
+class Task(Persistent):
     def __init__(self, name, description, tag, status, deadline=None):
         self.name = name
         self.description = description
@@ -64,8 +66,9 @@ class UrgentTask(Task):
         task_info["priority"] = "Critical" 
         return task_info
 class TaskManagementSystem:
-    def __init__(self, root):
+    def __init__(self, root, zodb_connection):
         self.root = root
+        self.zodb_connection = zodb_connection
         self.root.title("OrganizeIt")
         self.root.geometry("1450x900")
         
@@ -269,7 +272,7 @@ class TaskManagementSystem:
         else:
             deadline = None
 
-        # Instantiate the appropriate task type based on the tag
+        # Instantiate the task based on the tag
         if tag == "Work":
             task = WorkTask(task_name, description, deadline)
         elif tag == "Personal":
@@ -279,8 +282,16 @@ class TaskManagementSystem:
         else:
             task = Task(task_name, description, tag, status, deadline)
 
+        # Save to ZODB
+        connection = self.zodb_connection.get_connection()
+        root = connection.root()
+        if "tasks" not in root:
+            root["tasks"] = {}  # Create a tasks dictionary if it doesn't exist
+        root["tasks"][task_name] = task
+        transaction.commit()  # Commit changes to ZODB
+
         self.create_task_card(task)
-        self.task_creation_window.destroy()  # Close the creation window
+        self.task_creation_window.destroy()
 
     def open_custom_tag_creation_form(self):
         tag_creation_window = ctk.CTkToplevel(self.root)
@@ -369,13 +380,14 @@ class TaskManagementSystem:
 
 if __name__ == "__main__":
     root = ctk.CTk()
-    app = TaskManagementSystem(root)
-    db_file = "mydatabase.fs"  
-
+    db_file = "mydatabase.fs"
     zodb = ZODBConnection(db_file)
 
-    zodb.open()
-    
-    connection = zodb.get_connection() 
-    zodb.close()
+    try:
+        zodb.open()
+        app = TaskManagementSystem(root, zodb)
+        root.mainloop()
+    finally:
+        zodb.close()
+
     root.mainloop()

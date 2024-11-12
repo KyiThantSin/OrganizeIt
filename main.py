@@ -177,10 +177,22 @@ class TaskManagementSystem:
         self.canvas.pack(side="left", fill="both", expand=True)
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
-        self.create_task_card(task_name="Sample Task", description="This is a sample description", tag="Work", status="On Progress")
+        self.load_tasks_from_zodb()
 
-        for i in range(10):  
-            self.create_task_card(task_name=f"Task {i+1}", description=f"This is the description for task {i+1}", tag="Work", status="On Progress")
+    def load_tasks_from_zodb(self):
+        connection = self.zodb_connection.get_connection()
+        root = connection.root()
+        tasks_data = root.get("tasks", {})
+
+        for task_name, task in tasks_data.items():
+            task_info = task.get_display_info()
+            self.create_task_card(
+                task_name=task_info["name"], 
+                description=task_info["description"], 
+                tag=task_info["tag"], 
+                status=task_info["status"], 
+                deadline=task_info["deadline"]
+            )
 
     def create_task_card(self, task_name="Task", description="Description", tag="Work", status="On Progress", deadline=None):
         card_frame = ctk.CTkFrame(self.scrollable_frame, corner_radius=10)
@@ -204,6 +216,7 @@ class TaskManagementSystem:
 
         # Store task details
         self.tasks.append({"name": task_name, "description": description, "tag": tag, "status": status, "deadline": deadline})
+
 
     def open_task_creation_form(self):
         self.task_creation_window = ctk.CTkToplevel(self.root)
@@ -286,11 +299,18 @@ class TaskManagementSystem:
         connection = self.zodb_connection.get_connection()
         root = connection.root()
         if "tasks" not in root:
-            root["tasks"] = {}  # Create a tasks dictionary if it doesn't exist
+            root["tasks"] = {} 
         root["tasks"][task_name] = task
-        transaction.commit()  # Commit changes to ZODB
+        transaction.commit()  
 
-        self.create_task_card(task)
+        # task card
+        self.create_task_card(
+            task_name=task.name, 
+            description=task.description, 
+            tag=task.tag, 
+            status=task.status, 
+            deadline=task.deadline
+        )
         self.task_creation_window.destroy()
 
     def open_custom_tag_creation_form(self):

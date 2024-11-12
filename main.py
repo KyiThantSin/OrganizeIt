@@ -6,6 +6,7 @@ from zodb import ZODBConnection
 from task_operations import edit_task, delete_task
 from persistent import Persistent
 import transaction
+import uuid
 
 ctk.set_appearance_mode("white")
 ctk.set_default_color_theme("dark-blue")
@@ -24,7 +25,8 @@ tasks = [
     {"name": "Task 4", "status": "completed"},
 ]
 class Task(Persistent):
-    def __init__(self, name, description, tag, status, deadline=None):
+    def __init__(self, id, name, description, tag, status, deadline=None):
+        self.id = id
         self.name = name
         self.description = description
         self.tag = tag
@@ -33,6 +35,7 @@ class Task(Persistent):
 
     def get_display_info(self):
         return {
+            "id": self.id,
             "name": self.name,
             "description": self.description,
             "tag": self.tag,
@@ -41,8 +44,8 @@ class Task(Persistent):
         }
 
 class WorkTask(Task):
-    def __init__(self, name, description, deadline=None):
-        super().__init__(name, description, tag="Work", status="Not Started", deadline=deadline)
+    def __init__(self, id, name, description, deadline=None):
+        super().__init__(id, name, description, tag="Work", status="Not Started", deadline=deadline)
 
     def get_display_info(self):
         task_info = super().get_display_info()
@@ -50,8 +53,8 @@ class WorkTask(Task):
         return task_info
 
 class PersonalTask(Task):
-    def __init__(self, name, description, deadline=None):
-        super().__init__(name, description, tag="Personal", status="Not Started", deadline=deadline)
+    def __init__(self, id, name, description, deadline=None):
+        super().__init__(id , name, description, tag="Personal", status="Not Started", deadline=deadline)
 
     def get_display_info(self):
         task_info = super().get_display_info()
@@ -59,8 +62,8 @@ class PersonalTask(Task):
         return task_info
 
 class UrgentTask(Task):
-    def __init__(self, name, description, deadline=None):
-        super().__init__(name, description, tag="Urgent", status="Not Started", deadline=deadline)
+    def __init__(self, id, name, description, deadline=None):
+        super().__init__(id, name, description, tag="Urgent", status="Not Started", deadline=deadline)
 
     def get_display_info(self):
         task_info = super().get_display_info()
@@ -89,7 +92,7 @@ class TaskManagementSystem:
         self.filter_tag_var = ctk.StringVar()
         self.filter_status_var = ctk.StringVar()
         self.custom_tags = ["Work", "Personal", "Urgent"]  
-        self.tasks = []  # to hold all tasks with their deadlines
+        self.tasks = []  
 
         self.create_filter_section()
 
@@ -185,13 +188,14 @@ class TaskManagementSystem:
         root = connection.root()
         tasks_data = root.get("tasks", {})
 
-        for task_name, task in tasks_data.items():
+        for task_id, task in tasks_data.items():
             task_info = task.get_display_info()
             self.create_task_card(
-                task_name=task_info["name"], 
-                description=task_info["description"], 
-                tag=task_info["tag"], 
-                status=task_info["status"], 
+                task_id=task_info["id"],
+                task_name=task_info["name"],
+                description=task_info["description"],
+                tag=task_info["tag"],
+                status=task_info["status"],
                 deadline=task_info["deadline"]
             )
     
@@ -200,7 +204,7 @@ class TaskManagementSystem:
             widget.destroy()
         self.load_tasks_from_zodb()
 
-    def create_task_card(self, task_name="Task", description="Description", tag="Work", status="On Progress", deadline=None):
+    def create_task_card(self, task_id, task_name="Task", description="Description", tag="Work", status="On Progress", deadline=None):
         card_frame = ctk.CTkFrame(self.scrollable_frame, corner_radius=10)
         card_frame.pack(padx=5, pady=(10,10), fill="x")
 
@@ -221,7 +225,7 @@ class TaskManagementSystem:
         card_frame.grid_columnconfigure(0, weight=1)
 
         # Store task details
-        self.tasks.append({"name": task_name, "description": description, "tag": tag, "status": status, "deadline": deadline})
+        self.tasks.append({ "id": task_id, "name": task_name, "description": description, "tag": tag, "status": status, "deadline": deadline})
 
 
     def open_task_creation_form(self):
@@ -280,6 +284,7 @@ class TaskManagementSystem:
         save_button.grid(row=10, column=0, padx=10, pady=10)
 
     def save_task(self):
+        task_id = str(uuid.uuid4())
         task_name = self.task_name_entry.get()
         description = self.task_description_entry.get()
         tag = self.task_tag_entry.get()
@@ -293,28 +298,29 @@ class TaskManagementSystem:
 
         # Instantiate the task based on the tag
         if tag == "Work":
-            task = WorkTask(task_name, description, deadline)
+            task = WorkTask(task_id, task_name, description, deadline)
         elif tag == "Personal":
-            task = PersonalTask(task_name, description, deadline)
+            task = PersonalTask(task_id, task_name, description, deadline)
         elif tag == "Urgent":
-            task = UrgentTask(task_name, description, deadline)
+            task = UrgentTask(task_id, task_name, description, deadline)
         else:
-            task = Task(task_name, description, tag, status, deadline)
+            task = Task(task_id, task_name, description, tag, status, deadline)
 
         # Save to ZODB
         connection = self.zodb_connection.get_connection()
         root = connection.root()
         if "tasks" not in root:
-            root["tasks"] = {} 
-        root["tasks"][task_name] = task
-        transaction.commit()  
+            root["tasks"] = {}
+        root["tasks"][task_id] = task
+        transaction.commit()
 
         # task card
         self.create_task_card(
-            task_name=task.name, 
-            description=task.description, 
-            tag=task.tag, 
-            status=task.status, 
+            task_id=task.id,
+            task_name=task.name,
+            description=task.description,
+            tag=task.tag,
+            status=task.status,
             deadline=task.deadline
         )
         self.task_creation_window.destroy()

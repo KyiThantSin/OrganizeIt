@@ -218,7 +218,7 @@ class TaskManagementSystem:
         edit_button = ctk.CTkButton(card_frame, text="Edit", width=100, command=lambda: self.open_task_edit_form(task_name, description, tag, status, deadline))
         edit_button.grid(row=5, column=0, padx=10, pady=(5, 10), sticky="e")
 
-        delete_button = ctk.CTkButton(card_frame, text="Delete", width=100, command=lambda: delete_task(task_name, self.zodb_connection, self))
+        delete_button = ctk.CTkButton(card_frame, text="Delete", width=100, command=lambda: delete_task( task_id, self.zodb_connection, self))
         delete_button.grid(row=5, column=1, padx=10, pady=(5, 10), sticky="e")
 
         # layout

@@ -10,14 +10,14 @@ def edit_task(task_name, description, tag, status, deadline, db_connection):
         task.deadline = deadline
         db_connection.update_task(task_name, task)  
 
-def delete_task(task_name, db_connection, self):
+def delete_task(task_id, db_connection, self):
     connection = db_connection.get_connection()
     root = connection.root()
-        
-    if "tasks" in root and task_name in root["tasks"]:
-        del root["tasks"][task_name]
+    
+    if "tasks" in root and task_id in root["tasks"]:
+        del root["tasks"][task_id]
         print("Deleted")
         transaction.commit()
         self.refresh_task_list()
     else:
-        print(f"Task '{task_name}' not found.")
+        print(f"Task '{task_id}' not found.")

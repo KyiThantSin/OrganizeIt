@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from pie_chart import draw_pie_chart
 from tasks_summary import TaskSummaryComponent
 from zodb import ZODBConnection
+from task_operations import edit_task, delete_task
 from persistent import Persistent
 import transaction
 
@@ -165,11 +166,6 @@ class TaskManagementSystem:
         self.scrollbar = ctk.CTkScrollbar(parent, orientation="vertical", command=self.canvas.yview)
         self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
 
-        # no tasks
-        if not self.tasks:
-            no_task_label = ctk.CTkLabel(self.scrollable_frame, text="You're all caught up!", font=("Arial", 14), text_color="grey")
-            no_task_label.grid(row=0, column=0, pady=80, padx=80)
-
         # Configure the scrollable frame
         self.scrollable_frame.bind(
             "<Configure>",
@@ -198,6 +194,11 @@ class TaskManagementSystem:
                 status=task_info["status"], 
                 deadline=task_info["deadline"]
             )
+    
+    def refresh_task_list(self):
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+        self.load_tasks_from_zodb()
 
     def create_task_card(self, task_name="Task", description="Description", tag="Work", status="On Progress", deadline=None):
         card_frame = ctk.CTkFrame(self.scrollable_frame, corner_radius=10)
@@ -213,7 +214,7 @@ class TaskManagementSystem:
         edit_button = ctk.CTkButton(card_frame, text="Edit", width=100, command=lambda: self.open_task_edit_form(task_name, description, tag, status, deadline))
         edit_button.grid(row=5, column=0, padx=10, pady=(5, 10), sticky="e")
 
-        delete_button = ctk.CTkButton(card_frame, text="Delete", width=100)
+        delete_button = ctk.CTkButton(card_frame, text="Delete", width=100, command=lambda: delete_task(task_name, self.zodb_connection, self))
         delete_button.grid(row=5, column=1, padx=10, pady=(5, 10), sticky="e")
 
         # layout

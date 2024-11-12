@@ -165,6 +165,11 @@ class TaskManagementSystem:
         self.scrollbar = ctk.CTkScrollbar(parent, orientation="vertical", command=self.canvas.yview)
         self.scrollable_frame = ctk.CTkFrame(self.canvas, fg_color="transparent")
 
+        # no tasks
+        if not self.tasks:
+            no_task_label = ctk.CTkLabel(self.scrollable_frame, text="You're all caught up!", font=("Arial", 14), text_color="grey")
+            no_task_label.grid(row=0, column=0, pady=80, padx=80)
+
         # Configure the scrollable frame
         self.scrollable_frame.bind(
             "<Configure>",

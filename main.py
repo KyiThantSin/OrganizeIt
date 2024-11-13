@@ -3,9 +3,8 @@ from datetime import datetime, timedelta
 from pie_chart import draw_pie_chart
 from tasks_summary import TaskSummaryComponent
 from zodb import ZODBConnection
-from task_operations import edit_task, delete_task
+from task_operations import TaskOperations
 from persistent import Persistent
-import transaction
 import uuid
 
 ctk.set_appearance_mode("white")
@@ -75,7 +74,8 @@ class TaskManagementSystem:
         self.zodb_connection = zodb_connection
         self.root.title("OrganizeIt")
         self.root.geometry("1450x900")
-        
+        self.task_ops = TaskOperations(zodb_connection)
+
         # padding
         self.padx = 80
 
@@ -218,7 +218,7 @@ class TaskManagementSystem:
         edit_button = ctk.CTkButton(card_frame, text="Edit", width=100, command=lambda: self.open_task_edit_form(task_id, task_name, description, tag, status, deadline))
         edit_button.grid(row=5, column=0, padx=10, pady=(5, 10), sticky="e")
 
-        delete_button = ctk.CTkButton(card_frame, text="Delete", width=100, command=lambda: delete_task( task_id, self.zodb_connection, self))
+        delete_button = ctk.CTkButton(card_frame, text="Delete", width=100, command=lambda: self.task_ops.delete_task( task_id, self))
         delete_button.grid(row=5, column=1, padx=10, pady=(5, 10), sticky="e")
 
         # layout
@@ -304,37 +304,27 @@ class TaskManagementSystem:
         status = self.task_status_entry.get()
         deadline_str = self.task_deadline_entry.get()
 
-        if deadline_str:
-            deadline = datetime.strptime(deadline_str, "%Y-%m-%d")
-        else:
-            deadline = None
+        try:
+            deadline = datetime.strptime(deadline_str, "%Y-%m-%d") if deadline_str else None
+        except ValueError:
+            # Handle invalid date format
+            return False
 
-        connection = self.zodb_connection.get_connection()
-        root = connection.root()
-        
         if not isEdit:
-            task_id = str(uuid.uuid4()) 
-        
-        if isEdit:
-            task = root['tasks'].get(task_id)
-            if task:
-                task.name = task_name
-                task.description = description
-                task.tag = tag
-                task.status = status
-                task.deadline = deadline
+            task_id = str(uuid.uuid4())
+            new_task = Task(id=task_id, name=task_name, description=description, 
+                          tag=tag, status=status, deadline=deadline)
+            success = self.task_ops.save_task(task_id, new_task)
         else:
-            new_task = Task(id=task_id, name=task_name, description=description, tag=tag, status=status, deadline=deadline)
-            root['tasks'][task_id] = new_task
+            success = self.task_ops.edit_task(task_id, task_name, description, 
+                                            tag, status, deadline)
 
-        transaction.commit()
-        
-        self.refresh_task_list()
-
-        if isEdit:
-            self.task_edit_window.destroy()
-        else:
-            self.task_creation_window.destroy()
+        if success:
+            self.refresh_task_list()
+            if isEdit:
+                self.task_edit_window.destroy()
+            else:
+                self.task_creation_window.destroy()
 
 
     def open_custom_tag_creation_form(self):

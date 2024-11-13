@@ -1,48 +1,83 @@
 from datetime import datetime
 import transaction
+class TaskOperations:
+    def __init__(self, zodb_connection):
+        self.zodb_connection = zodb_connection
 
-def edit_task(task_id, task_name=None, description=None, tag=None, status=None, deadline=None, zodb_connection=None):
-    connection = zodb_connection.get_connection()
-    root = connection.root()
-
-    if "tasks" in root and task_id in root["tasks"]:
-        task = root["tasks"][task_id]
+    def apply_filter(self, selected_tag, selected_status):
+        connection = self.zodb_connection.get_connection()
+        root = connection.root()
+        tasks_data = root.get("tasks", {})
         
-        # Update task attributes if provided
-        if task_name is not None:
-            task.task_name = task_name
-        if description is not None:
-            task.description = description
-        if tag is not None:
-            task.tag = tag
-        if status is not None:
-            task.status = status
-        if deadline is not None:
-            task.deadline = deadline
-        
-        transaction.commit()  # Save the changes
-        print("updated")
-    else:
-        print(f"Task with ID {task_id} not found.")
+        filtered_tasks = {}
+        for task_id, task in tasks_data.items():
+            task_info = task.get_display_info()
+            matches_tag = not selected_tag or selected_tag == "All" or task_info["tag"] == selected_tag
+            matches_status = not selected_status or selected_status == "All" or task_info["status"] == selected_status
+            
+            if matches_tag and matches_status:
+                filtered_tasks[task_id] = task
+                
+        return filtered_tasks
 
-def delete_task(task_id, db_connection, self):
-    connection = db_connection.get_connection()
-    root = connection.root()
-    
-    if "tasks" in root and task_id in root["tasks"]:
-        del root["tasks"][task_id]
-        print("Deleted")
+    def edit_task(self, task_id, task_name=None, description=None, tag=None, status=None, deadline=None):
+        connection = self.zodb_connection.get_connection()
+        root = connection.root()
+        
+        if "tasks" in root and task_id in root["tasks"]:
+            task = root["tasks"][task_id]
+            
+            if task_name is not None:
+                task.name = task_name
+            if description is not None:
+                task.description = description
+            if tag is not None:
+                task.tag = tag
+            if status is not None:
+                task.status = status
+            if deadline is not None:
+                task.deadline = deadline
+            
+            transaction.commit()
+            return True
+        return False
+
+    def delete_task(self, task_id, app):
+        connection = self.zodb_connection.get_connection()
+        root = connection.root()
+        
+        if "tasks" in root and task_id in root["tasks"]:
+            del root["tasks"][task_id]
+            transaction.commit()
+            app.refresh_task_list()
+            return True
+        return False
+
+    def get_all_tasks(self):
+        connection = self.zodb_connection.get_connection()
+        root = connection.root()
+        return root.get("tasks", {})
+
+    def save_task(self, task_id, task_obj):
+        connection = self.zodb_connection.get_connection()
+        root = connection.root()
+        
+        if 'tasks' not in root:
+            root['tasks'] = {}
+            
+        root['tasks'][task_id] = task_obj
         transaction.commit()
-        self.refresh_task_list()
-    else:
-        print(f"Task '{task_id}' not found.")
+        return True
 
-def list_all_tasks(zodb_connection):
-    connection = zodb_connection.get_connection()
-    root = connection.root()
-    
-    if "tasks" in root:
-        for task_id, task in root["tasks"].items():
-            print(f"ID: {task_id}, Name: {task.task_name}, Desc: {task.description}, Tag: {task.tag}, Status: {task.status}, Deadline: {task.deadline}")
-    else:
-        print("No tasks found.")
+    def get_deadline_tasks(self, limit=3):
+        connection = self.zodb_connection.get_connection()
+        root = connection.root()
+        tasks = root.get("tasks", {})
+        
+        deadline_tasks = [
+            task for task in tasks.values()
+            if task.deadline is not None
+        ]
+        deadline_tasks.sort(key=lambda x: x.deadline)
+        
+        return deadline_tasks[:limit]

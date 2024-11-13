@@ -36,3 +36,13 @@ def delete_task(task_id, db_connection, self):
         self.refresh_task_list()
     else:
         print(f"Task '{task_id}' not found.")
+
+def list_all_tasks(zodb_connection):
+    connection = zodb_connection.get_connection()
+    root = connection.root()
+    
+    if "tasks" in root:
+        for task_id, task in root["tasks"].items():
+            print(f"ID: {task_id}, Name: {task.task_name}, Desc: {task.description}, Tag: {task.tag}, Status: {task.status}, Deadline: {task.deadline}")
+    else:
+        print("No tasks found.")

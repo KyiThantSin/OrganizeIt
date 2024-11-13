@@ -2,9 +2,10 @@ import customtkinter as ctk
 from datetime import datetime, timedelta
 from pie_chart import draw_pie_chart
 from tasks_summary import TaskSummaryComponent
+from tasks import Task, WorkTask, PersonalTask, UrgentTask
+from tags_management import Tags
 from zodb import ZODBConnection
 from task_operations import TaskOperations
-from persistent import Persistent
 import uuid
 
 ctk.set_appearance_mode("white")
@@ -23,51 +24,6 @@ tasks = [
     {"name": "Task 3", "status": "processing"},
     {"name": "Task 4", "status": "completed"},
 ]
-class Task(Persistent):
-    def __init__(self, id, name, description, tag, status, deadline=None):
-        self.id = id
-        self.name = name
-        self.description = description
-        self.tag = tag
-        self.status = status
-        self.deadline = deadline
-
-    def get_display_info(self):
-        return {
-            "id": self.id,
-            "name": self.name,
-            "description": self.description,
-            "tag": self.tag,
-            "status": self.status,
-            "deadline": self.deadline
-        }
-
-class WorkTask(Task):
-    def __init__(self, id, name, description, deadline=None):
-        super().__init__(id, name, description, tag="Work", status="Not Started", deadline=deadline)
-
-    def get_display_info(self):
-        task_info = super().get_display_info()
-        task_info["priority"] = "High"  
-        return task_info
-
-class PersonalTask(Task):
-    def __init__(self, id, name, description, deadline=None):
-        super().__init__(id , name, description, tag="Personal", status="Not Started", deadline=deadline)
-
-    def get_display_info(self):
-        task_info = super().get_display_info()
-        task_info["priority"] = "Low"  # Personal tasks have lower priority
-        return task_info
-
-class UrgentTask(Task):
-    def __init__(self, id, name, description, deadline=None):
-        super().__init__(id, name, description, tag="Urgent", status="Not Started", deadline=deadline)
-
-    def get_display_info(self):
-        task_info = super().get_display_info()
-        task_info["priority"] = "Critical" 
-        return task_info
 class TaskManagementSystem:
     def __init__(self, root, zodb_connection):
         self.root = root
@@ -75,6 +31,9 @@ class TaskManagementSystem:
         self.root.title("OrganizeIt")
         self.root.geometry("1450x900")
         self.task_ops = TaskOperations(zodb_connection)
+        self.tags = Tags(self.root) 
+        self.custom_tags = ["Work", "Personal", "Urgent"]
+       
 
         # padding
         self.padx = 80
@@ -107,7 +66,7 @@ class TaskManagementSystem:
         self.add_task_button.pack(side="right", padx=(10, 5))
         
         # Custom Tag button
-        add_custom_tag_button = ctk.CTkButton(button_frame, text="Add Custom Tag", command=self.open_custom_tag_creation_form)
+        add_custom_tag_button = ctk.CTkButton(button_frame, text="Add Custom Tag", command=self.tags.open_custom_tag_creation_form)
         add_custom_tag_button.pack(side="right", padx=(5, 5))
 
         # task frame below "All Tasks"
@@ -142,6 +101,35 @@ class TaskManagementSystem:
         self.view_pie_chart_button = ctk.CTkButton(self.pie_chart_frame, text="View Pie Chart", command=lambda: draw_pie_chart(task_data))
         self.view_pie_chart_button.pack(side="left")
 
+    def apply_filter(self):
+        selected_tag = self.filter_tag_var.get()
+        selected_status = self.filter_status_var.get()
+        
+        filtered_tasks = self.task_ops.apply_filter(selected_tag, selected_status)
+        
+        # Clear existing task display
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+        
+        for task_id, task in filtered_tasks.items():
+            task_info = task.get_display_info()
+            self.create_task_card(
+                task_id=task_info["id"],
+                task_name=task_info["name"],
+                description=task_info["description"],
+                tag=task_info["tag"],
+                status=task_info["status"],
+                deadline=task_info["deadline"]
+            )
+
+    def clear_filter(self):
+        # Reset filter values
+        self.filter_tag_var.set("")
+        self.filter_status_var.set("")
+        
+        # Refresh task list to show all tasks
+        self.refresh_task_list()
+
     def create_filter_section(self):
         filter_frame = ctk.CTkFrame(self.root, corner_radius=10)  
         filter_frame.pack(padx=self.padx, pady=(10, 10), fill="x")
@@ -149,19 +137,25 @@ class TaskManagementSystem:
         ctk.CTkLabel(filter_frame, text="Filter By Tags", font=self.custom_label_font).grid(row=0, column=0, padx=(10, 5), pady=(20, 5), sticky="w")
         ctk.CTkLabel(filter_frame, text="Filter By Status", font=self.custom_label_font).grid(row=0, column=1, padx=(10, 5), pady=(20, 5), sticky="w")
 
-        self.tag_entry = ctk.CTkComboBox(filter_frame, values=self.custom_tags, variable=self.filter_tag_var, width=180)
-        self.tag_entry.grid(row=1, column=0, padx=(10, 5), pady=(10, 40), sticky="ew")
+        # Add "All" option to the filter values
+        tag_values = ["All"] + self.custom_tags
+        status_values = ["All", "On Progress", "Completed", "Not Started"]
 
-        self.status_entry = ctk.CTkComboBox(filter_frame, values=["On Progress", "Completed", "Not Started"], variable=self.filter_status_var, width=180)
+        self.tag_entry = ctk.CTkComboBox(filter_frame, values=tag_values, variable=self.filter_tag_var, width=180)
+        self.tag_entry.grid(row=1, column=0, padx=(10, 5), pady=(10, 40), sticky="ew")
+        self.tag_entry.set("All")  # Set default value
+
+        self.status_entry = ctk.CTkComboBox(filter_frame, values=status_values, variable=self.filter_status_var, width=180)
         self.status_entry.grid(row=1, column=1, padx=(5, 10), pady=(10, 40), sticky="ew")
+        self.status_entry.set("All")  # Set default value
 
         button_frame = ctk.CTkFrame(filter_frame, fg_color="transparent") 
         button_frame.grid(row=1, column=2, columnspan=2, padx=(10, 10), pady=(10, 40), sticky="e")
 
-        apply_button = ctk.CTkButton(button_frame, text="Apply Filter", width=15)
+        apply_button = ctk.CTkButton(button_frame, text="Apply Filter", width=15, command=self.apply_filter)
         apply_button.pack(side="left", padx=(5, 5))
 
-        clear_button = ctk.CTkButton(button_frame, text="Clear", width=15)
+        clear_button = ctk.CTkButton(button_frame, text="Clear", width=15, command=self.clear_filter)
         clear_button.pack(side="left", padx=(5, 5))
 
     def create_task_list_area(self, parent):
@@ -312,12 +306,18 @@ class TaskManagementSystem:
 
         if not isEdit:
             task_id = str(uuid.uuid4())
-            new_task = Task(id=task_id, name=task_name, description=description, 
-                          tag=tag, status=status, deadline=deadline)
+            if tag == "Work":
+                new_task = WorkTask(task_id, task_name, description, deadline)
+            elif tag == "Personal":
+                new_task = PersonalTask(task_id, task_name, description, deadline)
+            elif tag == "Urgent":
+                new_task = UrgentTask(task_id, task_name, description, deadline)
+            else:
+                new_task = Task(task_id, task_name, description, tag, status, deadline)
+
             success = self.task_ops.save_task(task_id, new_task)
         else:
-            success = self.task_ops.edit_task(task_id, task_name, description, 
-                                            tag, status, deadline)
+            success = self.task_ops.edit_task(task_id, task_name, description, tag, status, deadline)
 
         if success:
             self.refresh_task_list()
@@ -326,86 +326,32 @@ class TaskManagementSystem:
             else:
                 self.task_creation_window.destroy()
 
-
-    def open_custom_tag_creation_form(self):
-        tag_creation_window = ctk.CTkToplevel(self.root)
-        tag_creation_window.title("Create Custom Tag")
-        tag_creation_window.geometry("600x600")
-
-        label = ctk.CTkLabel(tag_creation_window, text="Enter custom tag name:", font=self.custom_label_font)
-        label.pack(pady=10) 
-
-        custom_tag_entry = ctk.CTkEntry(tag_creation_window)
-        custom_tag_entry.pack(pady=10)
-
-        def add_custom_tag():
-            new_tag = custom_tag_entry.get()
-            if new_tag and new_tag not in self.custom_tags:
-                self.custom_tags.append(new_tag)
-                refresh_tag_list()
-                custom_tag_entry.delete(0, 'end')
-
-        add_button = ctk.CTkButton(tag_creation_window, text="Add Tag", command=add_custom_tag)
-        add_button.pack(pady=10)
-
-        title_label = ctk.CTkLabel(tag_creation_window, text="Your Tags List", font=self.custom_label_font)
-        title_label.pack(fill='x', padx=[self.padx], pady =10 )
-
-        tag_list_frame = ctk.CTkFrame(tag_creation_window, fg_color="transparent")
-        tag_list_frame.pack(fill='both', expand=True, pady=10)
-
-        def delete_tag(tag):
-            if tag in self.custom_tags:
-                self.custom_tags.remove(tag)
-                refresh_tag_list()
-
-        def refresh_tag_list():
-            for widget in tag_list_frame.winfo_children():
-                widget.destroy()
-
-            for tag in self.custom_tags:
-                tag_frame = ctk.CTkFrame(tag_list_frame, fg_color="transparent", width=300)
-                tag_frame.pack(fill='x', padx=[self.padx], pady=2)
-
-                tag_label = ctk.CTkLabel(tag_frame, text=tag)
-                tag_label.pack(side='left', padx=5)
-
-                delete_button = ctk.CTkButton(tag_frame, text="Delete", command=lambda t=tag: delete_tag(t))
-                delete_button.pack(side='right', padx=5)
-
-        refresh_tag_list()
-
     def show_top_deadline_tasks(self):
         for widget in self.deadline_tasks_frame.winfo_children():
             widget.destroy()
 
-        static_tasks = [
-            {"name": "Task 1", "deadline": datetime.now() + timedelta(days=3, hours=3)},
-            {"name": "Task 2", "deadline": datetime.now() + timedelta(days=2, hours=1)},
-            {"name": "Task 3", "deadline": datetime.now() + timedelta(days=1, hours=12)},
-        ]
-
-        deadline_tasks = sorted(static_tasks, key=lambda x: x["deadline"])
+        deadline_tasks = self.task_ops.get_deadline_tasks(limit=3)
 
         for index, task in enumerate(deadline_tasks):
-            card_frame = ctk.CTkFrame(self.deadline_tasks_frame, corner_radius=10, fg_color="#F5FFFA")
-            
+            card_frame = ctk.CTkFrame(self.deadline_tasks_frame, corner_radius=10, 
+                                    fg_color="#F5FFFA")
             card_frame.grid(row=0, column=index, padx=10, pady=(5, 10), sticky="nsew")
 
-            task_label = ctk.CTkLabel(card_frame, text=f"Task: {task['name']}", font=self.custom_task_label_font)
+            task_label = ctk.CTkLabel(card_frame, text=f"Task: {task.name}", 
+                                    font=self.custom_task_label_font)
             task_label.pack(pady=(5, 0), padx=10)
 
-            deadline_label = ctk.CTkLabel(card_frame, text=f"Deadline: {task['deadline'].strftime('%Y-%m-%d %H:%M')}")
+            deadline_label = ctk.CTkLabel(card_frame, 
+                text=f"Deadline: {task.deadline.strftime('%Y-%m-%d %H:%M')}")
             deadline_label.pack(pady=(0, 5), padx=10)
 
             # Calculate time left
-            time_left = task['deadline'] - datetime.now()
+            time_left = task.deadline - datetime.now()
             days_left = time_left.days
             hours_left = time_left.seconds // 3600
-            minutes_left = (time_left.seconds % 3600) // 60
 
-            # Display time left
-            time_left_text = f"{days_left} days {hours_left} hours left" if days_left >= 0 else "Deadline passed"
+            time_left_text = (f"{days_left} days {hours_left} hours left" 
+                            if days_left >= 0 else "Deadline passed")
             time_left_label = ctk.CTkLabel(card_frame, text=time_left_text)
             time_left_label.pack(pady=(5, 5), padx=10)
 

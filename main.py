@@ -197,6 +197,13 @@ class TaskManagementSystem:
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
         self.load_tasks_from_zodb()
+    
+    def validate_date(self, date_str):  
+        try:
+            datetime.strptime(date_str, "%Y-%m-%d")
+            return True
+        except ValueError:
+            return False
 
     def create_task_card(self, task_id, task_name="Task", description="Description", tag="Work", status="On Progress", deadline=None):
         card_frame = ctk.CTkFrame(self.scrollable_frame, corner_radius=10)
@@ -283,13 +290,18 @@ class TaskManagementSystem:
         self.task_deadline_entry = ctk.CTkEntry(form_frame, width=300)
         self.task_deadline_entry.grid(row=9, column=0, padx=10, pady=10)
         self.task_deadline_entry.insert(0, deadline.strftime("%Y-%m-%d") if deadline else "yyyy-mm-dd")
-        
+
+        self.error_label = ctk.CTkLabel(form_frame, text="", text_color="red", fg_color="transparent")
+        self.error_label.grid(row=10, column=0, padx=10, pady=5)
+        self.error_label.grid_forget()  # Initially hide the error label  
+                  
+        button_row = 11
         if isEdit:
             update_button = ctk.CTkButton(form_frame, text="Update", command=lambda: self.save_task(task_id, isEdit=True))
-            update_button.grid(row=10, column=0, padx=10, pady=10)
+            update_button.grid(row=button_row, column=0, padx=10, pady=10)
         else:
             save_button = ctk.CTkButton(form_frame, text="Save", command=lambda: self.save_task(task_id, isEdit))
-            save_button.grid(row=10, column=0, padx=10, pady=10)
+            save_button.grid(row=button_row, column=0, padx=10, pady=10)
                                 
     def save_task(self, task_id=None, isEdit=False):
         task_name = self.task_name_entry.get()
@@ -298,10 +310,18 @@ class TaskManagementSystem:
         status = self.task_status_entry.get()
         deadline_str = self.task_deadline_entry.get()
 
+        deadline = self.task_deadline_entry.get()
+
+        if not self.validate_date(deadline):
+            self.error_label.configure(text="Invalid date format! Please use YYYY-MM-DD.")
+            self.error_label.grid(row=10, column=0, padx=10, pady=20)  
+            return
+
+        self.error_label.grid_forget()
+
         try:
             deadline = datetime.strptime(deadline_str, "%Y-%m-%d") if deadline_str else None
         except ValueError:
-            # Handle invalid date format
             return False
 
         if not isEdit:

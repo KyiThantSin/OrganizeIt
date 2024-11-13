@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from pie_chart import draw_pie_chart
 from tasks_summary import TaskSummaryComponent
 from tasks import Task, WorkTask, PersonalTask, UrgentTask
+from tags_management import Tags
 from zodb import ZODBConnection
 from task_operations import TaskOperations
 import uuid
@@ -30,6 +31,9 @@ class TaskManagementSystem:
         self.root.title("OrganizeIt")
         self.root.geometry("1450x900")
         self.task_ops = TaskOperations(zodb_connection)
+        self.tags = Tags(self.root) 
+        self.custom_tags = ["Work", "Personal", "Urgent"]
+       
 
         # padding
         self.padx = 80
@@ -62,7 +66,7 @@ class TaskManagementSystem:
         self.add_task_button.pack(side="right", padx=(10, 5))
         
         # Custom Tag button
-        add_custom_tag_button = ctk.CTkButton(button_frame, text="Add Custom Tag", command=self.open_custom_tag_creation_form)
+        add_custom_tag_button = ctk.CTkButton(button_frame, text="Add Custom Tag", command=self.tags.open_custom_tag_creation_form)
         add_custom_tag_button.pack(side="right", padx=(5, 5))
 
         # task frame below "All Tasks"
@@ -321,55 +325,6 @@ class TaskManagementSystem:
                 self.task_edit_window.destroy()
             else:
                 self.task_creation_window.destroy()
-
-
-    def open_custom_tag_creation_form(self):
-        tag_creation_window = ctk.CTkToplevel(self.root)
-        tag_creation_window.title("Create Custom Tag")
-        tag_creation_window.geometry("600x600")
-
-        label = ctk.CTkLabel(tag_creation_window, text="Enter custom tag name:", font=self.custom_label_font)
-        label.pack(pady=10) 
-
-        custom_tag_entry = ctk.CTkEntry(tag_creation_window)
-        custom_tag_entry.pack(pady=10)
-
-        def add_custom_tag():
-            new_tag = custom_tag_entry.get()
-            if new_tag and new_tag not in self.custom_tags:
-                self.custom_tags.append(new_tag)
-                refresh_tag_list()
-                custom_tag_entry.delete(0, 'end')
-
-        add_button = ctk.CTkButton(tag_creation_window, text="Add Tag", command=add_custom_tag)
-        add_button.pack(pady=10)
-
-        title_label = ctk.CTkLabel(tag_creation_window, text="Your Tags List", font=self.custom_label_font)
-        title_label.pack(fill='x', padx=[self.padx], pady =10 )
-
-        tag_list_frame = ctk.CTkFrame(tag_creation_window, fg_color="transparent")
-        tag_list_frame.pack(fill='both', expand=True, pady=10)
-
-        def delete_tag(tag):
-            if tag in self.custom_tags:
-                self.custom_tags.remove(tag)
-                refresh_tag_list()
-
-        def refresh_tag_list():
-            for widget in tag_list_frame.winfo_children():
-                widget.destroy()
-
-            for tag in self.custom_tags:
-                tag_frame = ctk.CTkFrame(tag_list_frame, fg_color="transparent", width=300)
-                tag_frame.pack(fill='x', padx=[self.padx], pady=2)
-
-                tag_label = ctk.CTkLabel(tag_frame, text=tag)
-                tag_label.pack(side='left', padx=5)
-
-                delete_button = ctk.CTkButton(tag_frame, text="Delete", command=lambda t=tag: delete_tag(t))
-                delete_button.pack(side='right', padx=5)
-
-        refresh_tag_list()
 
     def show_top_deadline_tasks(self):
         for widget in self.deadline_tasks_frame.winfo_children():

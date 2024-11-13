@@ -248,10 +248,11 @@ class TaskManagementSystem:
             description=description,
             tag=tag,
             status=status,
-            deadline=deadline
+            deadline=deadline,
+            isEdit = True
         )
 
-    def create_task_form(self, parent, task_id=None, task_name=None, description=None, tag=None, status=None, deadline=None):
+    def create_task_form(self, parent, task_id=None, task_name=None, description=None, tag=None, status=None, deadline=None, isEdit = False):
         form_frame = ctk.CTkFrame(parent, fg_color="transparent")
         form_frame.place(relx=0.5, anchor="n")  # Centered horizontally
 
@@ -288,11 +289,16 @@ class TaskManagementSystem:
         self.task_deadline_entry = ctk.CTkEntry(form_frame, width=300)
         self.task_deadline_entry.grid(row=9, column=0, padx=10, pady=10)
         self.task_deadline_entry.insert(0, deadline.strftime("%Y-%m-%d") if deadline else "yyyy-mm-dd")
+        
+        if isEdit:
+            update_button = ctk.CTkButton(form_frame, text="Update", command=lambda: self.save_task(task_id, isEdit=True))
+            update_button.grid(row=10, column=0, padx=10, pady=10)
+        else:
+            save_button = ctk.CTkButton(form_frame, text="Save", command=lambda: self.save_task(task_id, isEdit))
+            save_button.grid(row=10, column=0, padx=10, pady=10)
+                                
 
-        save_button = ctk.CTkButton(form_frame, text="Save", command=lambda: self.save_task(task_id))
-        save_button.grid(row=10, column=0, padx=10, pady=10)
-
-    def save_task(self, task_id=None):
+    def save_task(self, task_id=None, isEdit= False):
         task_name = self.task_name_entry.get()
         description = self.task_description_entry.get()
         tag = self.task_tag_entry.get()
@@ -304,7 +310,7 @@ class TaskManagementSystem:
         else:
             deadline = None
 
-        if task_id:
+        if isEdit:
             edit_task(
                 task_id=task_id,
                 task_name=task_name,
@@ -315,6 +321,7 @@ class TaskManagementSystem:
                 zodb_connection=self.zodb_connection
             )
             self.task_edit_window.destroy()
+            self.refresh_task_list()
         else:
             # Otherwise, create a new task
             new_task_id = str(uuid.uuid4())

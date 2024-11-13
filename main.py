@@ -2,9 +2,9 @@ import customtkinter as ctk
 from datetime import datetime, timedelta
 from pie_chart import draw_pie_chart
 from tasks_summary import TaskSummaryComponent
+from tasks import Task, WorkTask, PersonalTask, UrgentTask
 from zodb import ZODBConnection
 from task_operations import TaskOperations
-from persistent import Persistent
 import uuid
 
 ctk.set_appearance_mode("white")
@@ -23,51 +23,6 @@ tasks = [
     {"name": "Task 3", "status": "processing"},
     {"name": "Task 4", "status": "completed"},
 ]
-class Task(Persistent):
-    def __init__(self, id, name, description, tag, status, deadline=None):
-        self.id = id
-        self.name = name
-        self.description = description
-        self.tag = tag
-        self.status = status
-        self.deadline = deadline
-
-    def get_display_info(self):
-        return {
-            "id": self.id,
-            "name": self.name,
-            "description": self.description,
-            "tag": self.tag,
-            "status": self.status,
-            "deadline": self.deadline
-        }
-
-class WorkTask(Task):
-    def __init__(self, id, name, description, deadline=None):
-        super().__init__(id, name, description, tag="Work", status="Not Started", deadline=deadline)
-
-    def get_display_info(self):
-        task_info = super().get_display_info()
-        task_info["priority"] = "High"  
-        return task_info
-
-class PersonalTask(Task):
-    def __init__(self, id, name, description, deadline=None):
-        super().__init__(id , name, description, tag="Personal", status="Not Started", deadline=deadline)
-
-    def get_display_info(self):
-        task_info = super().get_display_info()
-        task_info["priority"] = "Low"  # Personal tasks have lower priority
-        return task_info
-
-class UrgentTask(Task):
-    def __init__(self, id, name, description, deadline=None):
-        super().__init__(id, name, description, tag="Urgent", status="Not Started", deadline=deadline)
-
-    def get_display_info(self):
-        task_info = super().get_display_info()
-        task_info["priority"] = "Critical" 
-        return task_info
 class TaskManagementSystem:
     def __init__(self, root, zodb_connection):
         self.root = root
@@ -347,12 +302,18 @@ class TaskManagementSystem:
 
         if not isEdit:
             task_id = str(uuid.uuid4())
-            new_task = Task(id=task_id, name=task_name, description=description, 
-                          tag=tag, status=status, deadline=deadline)
+            if tag == "Work":
+                new_task = WorkTask(task_id, task_name, description, deadline)
+            elif tag == "Personal":
+                new_task = PersonalTask(task_id, task_name, description, deadline)
+            elif tag == "Urgent":
+                new_task = UrgentTask(task_id, task_name, description, deadline)
+            else:
+                new_task = Task(task_id, task_name, description, tag, status, deadline)
+
             success = self.task_ops.save_task(task_id, new_task)
         else:
-            success = self.task_ops.edit_task(task_id, task_name, description, 
-                                            tag, status, deadline)
+            success = self.task_ops.edit_task(task_id, task_name, description, tag, status, deadline)
 
         if success:
             self.refresh_task_list()

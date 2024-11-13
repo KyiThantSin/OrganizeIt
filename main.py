@@ -142,6 +142,35 @@ class TaskManagementSystem:
         self.view_pie_chart_button = ctk.CTkButton(self.pie_chart_frame, text="View Pie Chart", command=lambda: draw_pie_chart(task_data))
         self.view_pie_chart_button.pack(side="left")
 
+    def apply_filter(self):
+        selected_tag = self.filter_tag_var.get()
+        selected_status = self.filter_status_var.get()
+        
+        filtered_tasks = self.task_ops.apply_filter(selected_tag, selected_status)
+        
+        # Clear existing task display
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+        
+        for task_id, task in filtered_tasks.items():
+            task_info = task.get_display_info()
+            self.create_task_card(
+                task_id=task_info["id"],
+                task_name=task_info["name"],
+                description=task_info["description"],
+                tag=task_info["tag"],
+                status=task_info["status"],
+                deadline=task_info["deadline"]
+            )
+
+    def clear_filter(self):
+        # Reset filter values
+        self.filter_tag_var.set("")
+        self.filter_status_var.set("")
+        
+        # Refresh task list to show all tasks
+        self.refresh_task_list()
+
     def create_filter_section(self):
         filter_frame = ctk.CTkFrame(self.root, corner_radius=10)  
         filter_frame.pack(padx=self.padx, pady=(10, 10), fill="x")
@@ -149,19 +178,25 @@ class TaskManagementSystem:
         ctk.CTkLabel(filter_frame, text="Filter By Tags", font=self.custom_label_font).grid(row=0, column=0, padx=(10, 5), pady=(20, 5), sticky="w")
         ctk.CTkLabel(filter_frame, text="Filter By Status", font=self.custom_label_font).grid(row=0, column=1, padx=(10, 5), pady=(20, 5), sticky="w")
 
-        self.tag_entry = ctk.CTkComboBox(filter_frame, values=self.custom_tags, variable=self.filter_tag_var, width=180)
-        self.tag_entry.grid(row=1, column=0, padx=(10, 5), pady=(10, 40), sticky="ew")
+        # Add "All" option to the filter values
+        tag_values = ["All"] + self.custom_tags
+        status_values = ["All", "On Progress", "Completed", "Not Started"]
 
-        self.status_entry = ctk.CTkComboBox(filter_frame, values=["On Progress", "Completed", "Not Started"], variable=self.filter_status_var, width=180)
+        self.tag_entry = ctk.CTkComboBox(filter_frame, values=tag_values, variable=self.filter_tag_var, width=180)
+        self.tag_entry.grid(row=1, column=0, padx=(10, 5), pady=(10, 40), sticky="ew")
+        self.tag_entry.set("All")  # Set default value
+
+        self.status_entry = ctk.CTkComboBox(filter_frame, values=status_values, variable=self.filter_status_var, width=180)
         self.status_entry.grid(row=1, column=1, padx=(5, 10), pady=(10, 40), sticky="ew")
+        self.status_entry.set("All")  # Set default value
 
         button_frame = ctk.CTkFrame(filter_frame, fg_color="transparent") 
         button_frame.grid(row=1, column=2, columnspan=2, padx=(10, 10), pady=(10, 40), sticky="e")
 
-        apply_button = ctk.CTkButton(button_frame, text="Apply Filter", width=15)
+        apply_button = ctk.CTkButton(button_frame, text="Apply Filter", width=15, command=self.apply_filter)
         apply_button.pack(side="left", padx=(5, 5))
 
-        clear_button = ctk.CTkButton(button_frame, text="Clear", width=15)
+        clear_button = ctk.CTkButton(button_frame, text="Clear", width=15, command=self.clear_filter)
         clear_button.pack(side="left", padx=(5, 5))
 
     def create_task_list_area(self, parent):

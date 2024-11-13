@@ -10,7 +10,7 @@ class Tags:
         self.connection = self.db.open()
         self.root = self.connection.root()
 
-        # Set up default tags if the database is empty
+        # set up default tags 
         if 'custom_tags' not in self.root:
             self.custom_tags = ["Work", "Personal", "Urgent"]
             self.root['custom_tags'] = self.custom_tags
@@ -18,6 +18,7 @@ class Tags:
         else:
             self.custom_tags = self.root['custom_tags']
         
+        self.default_tags = ["work", "personal", "urgent"]
         self.custom_label_font = ctk.CTkFont(family="Arial", size=16, weight="bold")
 
     def open_custom_tag_creation_form(self):
@@ -31,14 +32,24 @@ class Tags:
         custom_tag_entry = ctk.CTkEntry(tag_creation_window)
         custom_tag_entry.pack(pady=10)
 
+        error_message = ctk.CTkLabel(tag_creation_window, text="", fg_color="red", font=("Arial", 12))
+        error_message.pack(pady=10)
+        error_message.pack_forget()  # hide the error message
+
         def add_custom_tag():
             new_tag = custom_tag_entry.get()
-            if new_tag and new_tag not in self.custom_tags:
-                self.custom_tags.append(new_tag)
-                self.root['custom_tags'] = self.custom_tags
-                transaction.commit()
-                refresh_tag_list()
-                custom_tag_entry.delete(0, 'end')
+            if new_tag:
+                if new_tag.lower() in self.default_tags or new_tag.lower() in self.custom_tags:
+                    error_message.configure(text="Tag already exists!")
+                    error_message.pack(pady=10) 
+                else:
+                    self.custom_tags.append(new_tag.lower())
+                    self.root['custom_tags'] = self.custom_tags
+                    transaction.commit()
+                    refresh_tag_list()
+                    custom_tag_entry.delete(0, 'end')
+                    error_message.configure(text="") 
+                    error_message.pack_forget() 
 
         add_button = ctk.CTkButton(tag_creation_window, text="Add Tag", command=add_custom_tag)
         add_button.pack(pady=10)
@@ -60,8 +71,7 @@ class Tags:
             for widget in tag_list_frame.winfo_children():
                 widget.destroy()
 
-
-            for tag in ["Work", "Personal", "Urgent"]:
+            for tag in self.default_tags:
                 tag_frame = ctk.CTkFrame(tag_list_frame, fg_color="transparent", width=300)
                 tag_frame.pack(fill='x', padx=10, pady=2)
 

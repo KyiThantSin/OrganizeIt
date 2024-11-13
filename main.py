@@ -379,33 +379,28 @@ class TaskManagementSystem:
         for widget in self.deadline_tasks_frame.winfo_children():
             widget.destroy()
 
-        static_tasks = [
-            {"name": "Task 1", "deadline": datetime.now() + timedelta(days=3, hours=3)},
-            {"name": "Task 2", "deadline": datetime.now() + timedelta(days=2, hours=1)},
-            {"name": "Task 3", "deadline": datetime.now() + timedelta(days=1, hours=12)},
-        ]
-
-        deadline_tasks = sorted(static_tasks, key=lambda x: x["deadline"])
+        deadline_tasks = self.task_ops.get_deadline_tasks(limit=3)
 
         for index, task in enumerate(deadline_tasks):
-            card_frame = ctk.CTkFrame(self.deadline_tasks_frame, corner_radius=10, fg_color="#F5FFFA")
-            
+            card_frame = ctk.CTkFrame(self.deadline_tasks_frame, corner_radius=10, 
+                                    fg_color="#F5FFFA")
             card_frame.grid(row=0, column=index, padx=10, pady=(5, 10), sticky="nsew")
 
-            task_label = ctk.CTkLabel(card_frame, text=f"Task: {task['name']}", font=self.custom_task_label_font)
+            task_label = ctk.CTkLabel(card_frame, text=f"Task: {task.name}", 
+                                    font=self.custom_task_label_font)
             task_label.pack(pady=(5, 0), padx=10)
 
-            deadline_label = ctk.CTkLabel(card_frame, text=f"Deadline: {task['deadline'].strftime('%Y-%m-%d %H:%M')}")
+            deadline_label = ctk.CTkLabel(card_frame, 
+                text=f"Deadline: {task.deadline.strftime('%Y-%m-%d %H:%M')}")
             deadline_label.pack(pady=(0, 5), padx=10)
 
             # Calculate time left
-            time_left = task['deadline'] - datetime.now()
+            time_left = task.deadline - datetime.now()
             days_left = time_left.days
             hours_left = time_left.seconds // 3600
-            minutes_left = (time_left.seconds % 3600) // 60
 
-            # Display time left
-            time_left_text = f"{days_left} days {hours_left} hours left" if days_left >= 0 else "Deadline passed"
+            time_left_text = (f"{days_left} days {hours_left} hours left" 
+                            if days_left >= 0 else "Deadline passed")
             time_left_label = ctk.CTkLabel(card_frame, text=time_left_text)
             time_left_label.pack(pady=(5, 5), padx=10)
 

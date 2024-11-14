@@ -66,6 +66,9 @@ class Tags:
                 self.root['custom_tags'] = self.custom_tags
                 transaction.commit()
                 refresh_tag_list()
+            elif tag in self.default_tags:
+                self.default_tags.remove(tag)
+                refresh_tag_list()
 
         def refresh_tag_list():
             for widget in tag_list_frame.winfo_children():

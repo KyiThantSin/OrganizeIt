@@ -142,17 +142,16 @@ class TaskManagementSystem:
         ctk.CTkLabel(filter_frame, text="Filter By Tags", font=self.custom_label_font).grid(row=0, column=0, padx=(10, 5), pady=(20, 5), sticky="w")
         ctk.CTkLabel(filter_frame, text="Filter By Status", font=self.custom_label_font).grid(row=0, column=1, padx=(10, 5), pady=(20, 5), sticky="w")
 
-        # Add "All" option to the filter values
-        tag_values = ["All"] + self.custom_tags
-        status_values = ["All", "On Progress", "Completed", "Not Started"]
+        tag_values = self.custom_tags
+        status_values = ["On Progress", "Completed", "Not Started"]
 
         self.tag_entry = ctk.CTkComboBox(filter_frame, values=tag_values, variable=self.filter_tag_var, width=180)
         self.tag_entry.grid(row=1, column=0, padx=(10, 5), pady=(10, 40), sticky="ew")
-        self.tag_entry.set("All")  # Set default value
+        self.tag_entry.set("Not Started")  # Set default value
 
         self.status_entry = ctk.CTkComboBox(filter_frame, values=status_values, variable=self.filter_status_var, width=180)
         self.status_entry.grid(row=1, column=1, padx=(5, 10), pady=(10, 40), sticky="ew")
-        self.status_entry.set("All")  # Set default value
+        self.status_entry.set("Not Started")  # Set default value
 
         button_frame = ctk.CTkFrame(filter_frame, fg_color="transparent") 
         button_frame.grid(row=1, column=2, columnspan=2, padx=(10, 10), pady=(10, 40), sticky="e")

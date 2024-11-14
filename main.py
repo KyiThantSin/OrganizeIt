@@ -87,7 +87,7 @@ class TaskManagementSystem:
         self.deadline_tasks_frame.pack(pady=(0, 20))
 
         self.show_top_deadline_tasks()
-
+        self.update_task_summary()
         # pie chart
         self.pie_chart_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
         self.pie_chart_frame.pack(pady=(5, 5), padx=20, anchor="w", fill="x")

@@ -23,38 +23,41 @@ class TaskSummaryComponent(ctk.CTkFrame):
         # Task count labels
         self.total_label = ctk.CTkLabel(self, text="Total Tasks: 0", font=self.custom_label_font)
         self.total_label.pack(pady=10, padx=10, anchor="w")
+
+        self.not_started_label = ctk.CTkLabel(self, text="Not Started Tasks: 0", font=self.custom_label_font)
+        self.not_started_label.pack(pady=10, padx=10, anchor="w")
         
         self.processing_label = ctk.CTkLabel(self, text="Processing Tasks: 0", font=self.custom_label_font)
         self.processing_label.pack(pady=10, padx=10, anchor="w")
         
         self.completed_label = ctk.CTkLabel(self, text="Completed Tasks: 0", font=self.custom_label_font)
         self.completed_label.pack(pady=10, padx=10, anchor="w")
-        
-        # Export button
-        self.export_button = ctk.CTkButton(self, text="Export to CSV", command=self.export_to_csv)
-        self.export_button.pack(pady=10, padx=10)
     
     def update_task_counts(self):
         if not self.tasks:
             self.total_tasks = 0
+            self.not_started_tasks = 0
             self.processing_tasks = 0
             self.completed_tasks = 0
             return
         
         self.total_tasks = len(self.tasks)
         
-        # Count processing tasks (including "On Progress" and "Not Started")
-        self.processing_tasks = sum(1 for task in self.tasks.values() 
-                                  if isinstance(task, dict) and 
-                                  task.get('status') in ["On Progress", "Not Started"])
+        self.not_started_tasks = sum(1 for task in self.tasks.values() 
+                                     if isinstance(task, dict) and 
+                                     task.get('status') == "Not Started")
         
-        # Count completed tasks
+        self.processing_tasks = sum(1 for task in self.tasks.values() 
+                                    if isinstance(task, dict) and 
+                                    task.get('status') == "On Progress")
+        
         self.completed_tasks = sum(1 for task in self.tasks.values() 
-                                 if isinstance(task, dict) and 
-                                 task.get('status') == "Completed")
+                                   if isinstance(task, dict) and 
+                                   task.get('status') == "Completed")
         
         # Update labels
         self.total_label.configure(text=f"Total Tasks: {self.total_tasks}")
+        self.not_started_label.configure(text=f"Not Started Tasks: {self.not_started_tasks}")
         self.processing_label.configure(text=f"Processing Tasks: {self.processing_tasks}")
         self.completed_label.configure(text=f"Completed Tasks: {self.completed_tasks}")
         

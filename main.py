@@ -88,7 +88,9 @@ class TaskManagementSystem:
         self.deadline_tasks_frame.pack(pady=(0, 20))
 
         self.show_top_deadline_tasks()
-        task_summary = TaskSummaryComponent(self.right_frame, tasks)
+
+        tasks_list = self.task_ops.get_all_tasks()
+        task_summary = TaskSummaryComponent(self.right_frame, tasks_list)
         task_summary.pack(padx=20, pady=5, anchor="w")
         task_summary.configure(fg_color="transparent")
         # pie chart

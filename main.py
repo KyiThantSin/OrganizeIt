@@ -97,13 +97,15 @@ class TaskManagementSystem:
 
         self.view_pie_chart_button = ctk.CTkButton(self.pie_chart_frame, text="View Pie Chart", command=lambda: draw_pie_chart(task_data))
         self.view_pie_chart_button.pack(side="left")
-    
+
     def update_task_summary(self):
-        tasks_list = self.task_ops.get_all_tasks()  # Fetch all tasks again
-        task_summary = TaskSummaryComponent(self.right_frame, tasks_list)
-        task_summary.pack(padx=20, pady=5, anchor="w")
-        task_summary.configure(fg_color="transparent")
-        task_summary.update_progress_bar()
+        tasks_list = self.task_ops.get_all_tasks()
+        print("Tasks list:", tasks_list)  # Debug print
+        if hasattr(self, 'task_summary'):
+            self.task_summary.destroy()
+        self.task_summary = TaskSummaryComponent(self.right_frame, tasks_list)
+        self.task_summary.pack(padx=20, pady=5, anchor="w")
+        self.task_summary.configure(fg_color="transparent")
 
     def apply_filter(self):
         selected_tag = self.filter_tag_var.get()
@@ -111,7 +113,6 @@ class TaskManagementSystem:
         
         filtered_tasks = self.task_ops.apply_filter(selected_tag, selected_status)
         
-        # Clear existing task display
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
         

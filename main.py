@@ -34,7 +34,6 @@ class TaskManagementSystem:
         self.tags = Tags(self.root) 
         self.custom_tags = ["Work", "Personal", "Urgent"]
        
-
         # padding
         self.padx = 80
 
@@ -88,12 +87,10 @@ class TaskManagementSystem:
         self.deadline_tasks_frame.pack(pady=(0, 20))
 
         self.show_top_deadline_tasks()
-        task_summary = TaskSummaryComponent(self.right_frame, tasks)
-        task_summary.pack(padx=20, pady=5, anchor="w")
-        task_summary.configure(fg_color="transparent")
+        self.update_task_summary()
         # pie chart
         self.pie_chart_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
-        self.pie_chart_frame.pack(pady=(20, 5), padx=20, anchor="w", fill="x")
+        self.pie_chart_frame.pack(pady=(5, 5), padx=20, anchor="w", fill="x")
 
         self.pie_chart_label = ctk.CTkLabel(self.pie_chart_frame, text="If you want to see data in a pie chart, click here:", fg_color="transparent")
         self.pie_chart_label.pack(side="left", padx=(0, 10))
@@ -101,13 +98,21 @@ class TaskManagementSystem:
         self.view_pie_chart_button = ctk.CTkButton(self.pie_chart_frame, text="View Pie Chart", command=lambda: draw_pie_chart(task_data))
         self.view_pie_chart_button.pack(side="left")
 
+    def update_task_summary(self):
+        tasks_list = self.task_ops.get_all_tasks()
+        print("Tasks list:", tasks_list)  # Debug print
+        if hasattr(self, 'task_summary'):
+            self.task_summary.destroy()
+        self.task_summary = TaskSummaryComponent(self.right_frame, tasks_list)
+        self.task_summary.pack(padx=20, pady=5, anchor="w")
+        self.task_summary.configure(fg_color="transparent")
+
     def apply_filter(self):
         selected_tag = self.filter_tag_var.get()
         selected_status = self.filter_status_var.get()
         
         filtered_tasks = self.task_ops.apply_filter(selected_tag, selected_status)
         
-        # Clear existing task display
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
         
@@ -341,6 +346,7 @@ class TaskManagementSystem:
 
         if success:
             self.refresh_task_list()
+            self.update_task_summary()
             if isEdit:
                 self.task_edit_window.destroy()
             else:

@@ -50,13 +50,22 @@ class TaskOperations:
             del root["tasks"][task_id]
             transaction.commit()
             app.refresh_task_list()
+            app.update_task_summary()
             return True
         return False
 
     def get_all_tasks(self):
         connection = self.zodb_connection.get_connection()
         root = connection.root()
-        return root.get("tasks", {})
+    
+        tasks = root.get("tasks", {})
+    
+        readable_tasks = {}
+        for task_id, task in tasks.items():
+            readable_tasks[task_id] = task.get_display_info()  
+        
+        return readable_tasks
+
 
     def save_task(self, task_id, task_obj):
         connection = self.zodb_connection.get_connection()

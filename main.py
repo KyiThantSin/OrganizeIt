@@ -299,7 +299,8 @@ class TaskManagementSystem:
         else:
             save_button = ctk.CTkButton(form_frame, text="Save", command=lambda: self.save_task(task_id, isEdit))
             save_button.grid(row=button_row, column=0, padx=10, pady=10)
-                                
+        self.tags.update_tag_values(self.task_tag_entry)
+                          
     def save_task(self, task_id=None, isEdit=False):
         task_name = self.task_name_entry.get()
         description = self.task_description_entry.get()

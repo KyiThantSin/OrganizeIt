@@ -175,7 +175,7 @@ class TaskManagementSystem:
         )
 
         self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-
+        self.no_tasks_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
         self.scrollbar.pack(side="right", fill="y")
         self.canvas.pack(side="left", fill="both", expand=True)
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
@@ -187,16 +187,28 @@ class TaskManagementSystem:
         root = connection.root()
         tasks_data = root.get("tasks", {})
 
-        for task_id, task in tasks_data.items():
-            task_info = task.get_display_info()
-            self.create_task_card(
-                task_id=task_info["id"],
-                task_name=task_info["name"],
-                description=task_info["description"],
-                tag=task_info["tag"],
-                status=task_info["status"],
-                deadline=task_info["deadline"]
+        if not tasks_data:
+            no_tasks_frame = ctk.CTkFrame(self.scrollable_frame, fg_color="transparent")
+            no_tasks_frame.pack(padx=5, pady=20, fill="x")
+            
+            no_tasks_label = ctk.CTkLabel(
+                no_tasks_frame, 
+                text="There are no tasks to show", 
+                font=self.custom_label_font,
+                text_color="gray"
             )
+            no_tasks_label.pack(expand=True)
+        else:
+            for task_id, task in tasks_data.items():
+                task_info = task.get_display_info()
+                self.create_task_card(
+                    task_id=task_info["id"],
+                    task_name=task_info["name"],
+                    description=task_info["description"],
+                    tag=task_info["tag"],
+                    status=task_info["status"],
+                    deadline=task_info["deadline"]
+                )
     
     def refresh_task_list(self):
         for widget in self.scrollable_frame.winfo_children():
@@ -230,7 +242,6 @@ class TaskManagementSystem:
         # layout
         card_frame.grid_columnconfigure(0, weight=1)
 
-        # Store task details
         self.tasks.append({ "id": task_id, "name": task_name, "description": description, "tag": tag, "status": status, "deadline": deadline})
 
     def open_task_creation_form(self):
@@ -361,7 +372,8 @@ class TaskManagementSystem:
             no_tasks_label = ctk.CTkLabel(
                 self.deadline_tasks_frame, 
                 text="No upcoming deadline tasks",
-                font=self.custom_task_label_font
+                font=self.custom_task_label_font,
+                text_color="gray"
             )
             no_tasks_label.pack(pady=20)
             return

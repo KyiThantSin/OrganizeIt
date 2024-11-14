@@ -233,7 +233,6 @@ class TaskManagementSystem:
         # Store task details
         self.tasks.append({ "id": task_id, "name": task_name, "description": description, "tag": tag, "status": status, "deadline": deadline})
 
-
     def open_task_creation_form(self):
         self.task_creation_window = ctk.CTkToplevel(self.root)
         self.task_creation_window.title("Create New Task")
@@ -246,7 +245,6 @@ class TaskManagementSystem:
         self.task_edit_window.title(f"Edit Task: {task_name}")
         self.task_edit_window.geometry("600x600")
 
-        # Pass task_id to create_task_form
         self.create_task_form(
             parent=self.task_edit_window,
             task_id=task_id,
@@ -347,6 +345,7 @@ class TaskManagementSystem:
         if success:
             self.refresh_task_list()
             self.update_task_summary()
+            self.show_top_deadline_tasks()
             if isEdit:
                 self.task_edit_window.destroy()
             else:
@@ -357,31 +356,60 @@ class TaskManagementSystem:
             widget.destroy()
 
         deadline_tasks = self.task_ops.get_deadline_tasks(limit=3)
+        
+        if not deadline_tasks:
+            no_tasks_label = ctk.CTkLabel(
+                self.deadline_tasks_frame, 
+                text="No upcoming deadline tasks",
+                font=self.custom_task_label_font
+            )
+            no_tasks_label.pack(pady=20)
+            return
 
         for index, task in enumerate(deadline_tasks):
-            card_frame = ctk.CTkFrame(self.deadline_tasks_frame, corner_radius=10, 
-                                    fg_color="#F5FFFA")
-            card_frame.grid(row=0, column=index, padx=10, pady=(5, 10), sticky="nsew")
+            if task.deadline:  # only create cards for tasks with deadlines
+                card_frame = ctk.CTkFrame(
+                    self.deadline_tasks_frame, 
+                    corner_radius=10, 
+                    fg_color="#F5FFFA"
+                )
+                card_frame.grid(row=0, column=index, padx=10, pady=(5, 10), sticky="nsew")
 
-            task_label = ctk.CTkLabel(card_frame, text=f"Task: {task.name}", 
-                                    font=self.custom_task_label_font)
-            task_label.pack(pady=(5, 0), padx=10)
+                # Task name
+                task_label = ctk.CTkLabel(
+                    card_frame, 
+                    text=f"{task.name}", 
+                    font=self.custom_task_label_font
+                )
+                task_label.pack(pady=(5, 0), padx=10)
 
-            deadline_label = ctk.CTkLabel(card_frame, 
-                text=f"Deadline: {task.deadline.strftime('%Y-%m-%d %H:%M')}")
-            deadline_label.pack(pady=(0, 5), padx=10)
+                # Deadline
+                deadline_label = ctk.CTkLabel(
+                    card_frame, 
+                    text=f"Deadline: {task.deadline.strftime('%Y-%m-%d')}"
+                )
+                deadline_label.pack(pady=(0, 5), padx=10)
 
-            # Calculate time left
-            time_left = task.deadline - datetime.now()
-            days_left = time_left.days
-            hours_left = time_left.seconds // 3600
+                # Calculate time remaining
+                time_left = task.deadline - datetime.now()
+                days_left = time_left.days
+                hours_left = time_left.seconds // 3600
 
-            time_left_text = (f"{days_left} days {hours_left} hours left" 
-                            if days_left >= 0 else "Deadline passed")
-            time_left_label = ctk.CTkLabel(card_frame, text=time_left_text)
-            time_left_label.pack(pady=(5, 5), padx=10)
+                # format time left text
+                if days_left < 0:
+                    time_left_text = "Deadline passed"
+                elif days_left == 0:
+                    time_left_text = f"{hours_left} hours left"
+                else:
+                    time_left_text = f"{days_left} days {hours_left} hours left"
 
-        for i in range(len(deadline_tasks)):
+                time_left_label = ctk.CTkLabel(card_frame, text=time_left_text)
+                time_left_label.pack(pady=(0, 5), padx=10)
+
+                status_label = ctk.CTkLabel(card_frame, text=f"Status: {task.status}")
+                status_label.pack(pady=(0, 5), padx=10)
+
+        for i in range(min(len(deadline_tasks), 3)):
             self.deadline_tasks_frame.grid_columnconfigure(i, weight=1)
 
 if __name__ == "__main__":

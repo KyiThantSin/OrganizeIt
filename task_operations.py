@@ -51,6 +51,7 @@ class TaskOperations:
             transaction.commit()
             app.refresh_task_list()
             app.update_task_summary()
+            app.show_top_deadline_tasks()
             return True
         return False
 

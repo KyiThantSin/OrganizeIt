@@ -80,7 +80,7 @@ class TaskManagementSystem:
         self.create_task_list_area(self.left_frame)
 
         # Section to show top 3 deadline tasks
-        self.deadline_tasks_label = ctk.CTkLabel(self.right_frame, text="Top 3 Deadline Tasks", font=self.custom_label_font)
+        self.deadline_tasks_label = ctk.CTkLabel(self.right_frame, text="Priority Tasks by Deadline", font=self.custom_label_font)
         self.deadline_tasks_label.pack(pady=(20, 5))
 
         self.deadline_tasks_frame = ctk.CTkFrame(self.right_frame,fg_color="transparent")

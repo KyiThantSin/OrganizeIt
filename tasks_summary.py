@@ -34,10 +34,6 @@ class TaskSummaryComponent(ctk.CTkFrame):
         # Export to CSV button
         self.export_button = ctk.CTkButton(self, text="Export to CSV", command=lambda: self.export_to_csv(tasks))
         self.export_button.pack(pady=10, padx=10)
-
-        # Track historical data button
-        self.track_button = ctk.CTkButton(self, text="Track Historical Data", command=lambda: self.track_historical_data(tasks))
-        self.track_button.pack(pady=10, padx=10)
     
     def calculate_task_progress(self, tasks):
         total_progress = 0
@@ -55,7 +51,7 @@ class TaskSummaryComponent(ctk.CTkFrame):
                 writer = csv.writer(file)
                 writer.writerow(["Task ID", "Name", "Status", "Priority", "Tag", "Date"])
 
-                for task in tasks:
+                for task_id, task in tasks.items():  # Assuming tasks is a dictionary with task_id as key
                     task_id = task.get('id', 'N/A')  
                     name = task.get('name', 'N/A')
                     status = task.get('status', 'N/A')
@@ -67,9 +63,3 @@ class TaskSummaryComponent(ctk.CTkFrame):
         except Exception as e:
             print(f"An error occurred while exporting to CSV: {e}")
 
-    def track_historical_data(self, tasks):
-        date_trends = {}
-        for task in tasks:
-            task_date = task['date']
-            date_trends[task_date] = date_trends.get(task_date, 0) + 1
-        print(f"Task Trends by Date: {date_trends}")

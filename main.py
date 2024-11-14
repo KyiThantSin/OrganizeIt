@@ -34,7 +34,6 @@ class TaskManagementSystem:
         self.tags = Tags(self.root) 
         self.custom_tags = ["Work", "Personal", "Urgent"]
        
-
         # padding
         self.padx = 80
 
@@ -89,19 +88,22 @@ class TaskManagementSystem:
 
         self.show_top_deadline_tasks()
 
-        tasks_list = self.task_ops.get_all_tasks()
-        task_summary = TaskSummaryComponent(self.right_frame, tasks_list)
-        task_summary.pack(padx=20, pady=5, anchor="w")
-        task_summary.configure(fg_color="transparent")
         # pie chart
         self.pie_chart_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
-        self.pie_chart_frame.pack(pady=(20, 5), padx=20, anchor="w", fill="x")
+        self.pie_chart_frame.pack(pady=(5, 5), padx=20, anchor="w", fill="x")
 
         self.pie_chart_label = ctk.CTkLabel(self.pie_chart_frame, text="If you want to see data in a pie chart, click here:", fg_color="transparent")
         self.pie_chart_label.pack(side="left", padx=(0, 10))
 
         self.view_pie_chart_button = ctk.CTkButton(self.pie_chart_frame, text="View Pie Chart", command=lambda: draw_pie_chart(task_data))
         self.view_pie_chart_button.pack(side="left")
+    
+    def update_task_summary(self):
+        tasks_list = self.task_ops.get_all_tasks()  # Fetch all tasks again
+        task_summary = TaskSummaryComponent(self.right_frame, tasks_list)
+        task_summary.pack(padx=20, pady=5, anchor="w")
+        task_summary.configure(fg_color="transparent")
+        task_summary.update_progress_bar()
 
     def apply_filter(self):
         selected_tag = self.filter_tag_var.get()
@@ -343,6 +345,7 @@ class TaskManagementSystem:
 
         if success:
             self.refresh_task_list()
+            self.update_task_summary()
             if isEdit:
                 self.task_edit_window.destroy()
             else:

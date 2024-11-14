@@ -35,6 +35,12 @@ class TaskSummaryComponent(ctk.CTkFrame):
         self.export_button = ctk.CTkButton(self, text="Export to CSV", command=lambda: self.export_to_csv(tasks))
         self.export_button.pack(pady=10, padx=10)
     
+    def update_progress_bar(self):
+        total_tasks = len(self.tasks)
+        completed_tasks = sum(1 for task in self.tasks if isinstance(task, dict) and task.get('status') == 'Completed')
+        progress = completed_tasks / total_tasks * 100 if total_tasks else 0
+        self.progress_bar.set(progress)
+
     def calculate_task_progress(self, tasks):
         total_progress = 0
         count = 0

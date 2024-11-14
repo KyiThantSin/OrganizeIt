@@ -50,6 +50,7 @@ class TaskOperations:
             del root["tasks"][task_id]
             transaction.commit()
             app.refresh_task_list()
+            app.update_task_summary()
             return True
         return False
 

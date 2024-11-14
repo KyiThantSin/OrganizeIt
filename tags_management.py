@@ -4,11 +4,12 @@ from ZODB.FileStorage import FileStorage
 import transaction
 
 class Tags:
-    def __init__(self, main_window):
+    def __init__(self, main_window, tag_entry = None):
         self.main_window = main_window
         self.db = DB(FileStorage('tag_database.fs'))
         self.connection = self.db.open()
         self.root = self.connection.root()
+        self.tag_entry = tag_entry
 
         # set up default tags 
         if 'custom_tags' not in self.root:
@@ -20,6 +21,11 @@ class Tags:
         
         self.default_tags = ["work", "personal", "urgent"]
         self.custom_label_font = ctk.CTkFont(family="Arial", size=16, weight="bold")
+    
+    def update_tag_values(self, tag_entry):
+        tag_values = self.custom_tags + self.default_tags
+        tag_entry.configure(values=tag_values)
+        tag_entry.set(tag_values[0] if tag_values else "")
 
     def open_custom_tag_creation_form(self):
         tag_creation_window = ctk.CTkToplevel(self.main_window)
@@ -47,6 +53,7 @@ class Tags:
                     self.root['custom_tags'] = self.custom_tags
                     transaction.commit()
                     refresh_tag_list()
+                    self.update_tag_values(self.tag_entry)
                     custom_tag_entry.delete(0, 'end')
                     error_message.configure(text="") 
                     error_message.pack_forget() 
@@ -66,7 +73,12 @@ class Tags:
                 self.root['custom_tags'] = self.custom_tags
                 transaction.commit()
                 refresh_tag_list()
-
+                self.update_tag_values(self.tag_entry)
+            elif tag in self.default_tags:
+                self.default_tags.remove(tag)
+                refresh_tag_list()
+                self.update_tag_values(self.tag_entry)
+        
         def refresh_tag_list():
             for widget in tag_list_frame.winfo_children():
                 widget.destroy()

@@ -1,6 +1,5 @@
 import customtkinter as ctk
 from datetime import datetime, timedelta
-from pie_chart import draw_pie_chart
 from tasks_summary import TaskSummaryComponent
 from tasks import Task, WorkTask, PersonalTask, UrgentTask
 from tags_management import Tags
@@ -17,13 +16,6 @@ task_data = {
     "Completed": 50,
     "Processing": 20
 }
-
-tasks = [
-    {"name": "Task 1", "status": "processing"},
-    {"name": "Task 2", "status": "completed"},
-    {"name": "Task 3", "status": "processing"},
-    {"name": "Task 4", "status": "completed"},
-]
 class TaskManagementSystem:
     def __init__(self, root, zodb_connection):
         self.root = root
@@ -31,7 +23,6 @@ class TaskManagementSystem:
         self.root.title("OrganizeIt")
         self.root.geometry("1450x900")
         self.task_ops = TaskOperations(zodb_connection)
-        self.tags = Tags(self.root) 
         self.custom_tags = ["Work", "Personal", "Urgent"]
        
         # padding
@@ -88,15 +79,6 @@ class TaskManagementSystem:
 
         self.show_top_deadline_tasks()
         self.update_task_summary()
-        # pie chart
-        self.pie_chart_frame = ctk.CTkFrame(self.right_frame, fg_color="transparent")
-        self.pie_chart_frame.pack(pady=(5, 5), padx=20, anchor="w", fill="x")
-
-        self.pie_chart_label = ctk.CTkLabel(self.pie_chart_frame, text="If you want to see data in a pie chart, click here:", fg_color="transparent")
-        self.pie_chart_label.pack(side="left", padx=(0, 10))
-
-        self.view_pie_chart_button = ctk.CTkButton(self.pie_chart_frame, text="View Pie Chart", command=lambda: draw_pie_chart(task_data))
-        self.view_pie_chart_button.pack(side="left")
 
     def update_task_summary(self):
         tasks_list = self.task_ops.get_all_tasks()
@@ -142,17 +124,17 @@ class TaskManagementSystem:
         ctk.CTkLabel(filter_frame, text="Filter By Tags", font=self.custom_label_font).grid(row=0, column=0, padx=(10, 5), pady=(20, 5), sticky="w")
         ctk.CTkLabel(filter_frame, text="Filter By Status", font=self.custom_label_font).grid(row=0, column=1, padx=(10, 5), pady=(20, 5), sticky="w")
 
-        # Add "All" option to the filter values
-        tag_values = ["All"] + self.custom_tags
-        status_values = ["All", "On Progress", "Completed", "Not Started"]
+        tag_values = self.custom_tags
+        status_values = ["On Progress", "Completed", "Not Started"]
 
         self.tag_entry = ctk.CTkComboBox(filter_frame, values=tag_values, variable=self.filter_tag_var, width=180)
         self.tag_entry.grid(row=1, column=0, padx=(10, 5), pady=(10, 40), sticky="ew")
-        self.tag_entry.set("All")  # Set default value
+        self.tag_entry.set("Not Started")  # Set default value
+        self.tags = Tags(self.root, tag_entry=self.tag_entry) 
 
         self.status_entry = ctk.CTkComboBox(filter_frame, values=status_values, variable=self.filter_status_var, width=180)
         self.status_entry.grid(row=1, column=1, padx=(5, 10), pady=(10, 40), sticky="ew")
-        self.status_entry.set("All")  # Set default value
+        self.status_entry.set("Not Started")  # Set default value
 
         button_frame = ctk.CTkFrame(filter_frame, fg_color="transparent") 
         button_frame.grid(row=1, column=2, columnspan=2, padx=(10, 10), pady=(10, 40), sticky="e")
@@ -162,6 +144,7 @@ class TaskManagementSystem:
 
         clear_button = ctk.CTkButton(button_frame, text="Clear", width=15, command=self.clear_filter)
         clear_button.pack(side="left", padx=(5, 5))
+        self.tags.update_tag_values(self.tag_entry)
 
     def create_task_list_area(self, parent):
         self.canvas = ctk.CTkCanvas(parent, bg=self.root.cget("bg"), highlightthickness=0)
@@ -316,7 +299,8 @@ class TaskManagementSystem:
         else:
             save_button = ctk.CTkButton(form_frame, text="Save", command=lambda: self.save_task(task_id, isEdit))
             save_button.grid(row=button_row, column=0, padx=10, pady=10)
-                                
+        self.tags.update_tag_values(self.task_tag_entry)
+                          
     def save_task(self, task_id=None, isEdit=False):
         task_name = self.task_name_entry.get()
         description = self.task_description_entry.get()

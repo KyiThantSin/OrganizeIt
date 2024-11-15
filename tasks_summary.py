@@ -70,27 +70,3 @@ class TaskSummaryComponent(ctk.CTkFrame):
         else:
             progress = (self.completed_tasks / self.total_tasks)
         self.progress_bar.set(progress)
-    
-    def export_to_csv(self):
-        try:
-            with open("task_report.csv", "w", newline="") as file:
-                writer = csv.writer(file)
-                writer.writerow(["Task ID", "Name", "Description", "Status", "Tag", "Deadline"])
-                
-                for task_id, task in self.tasks.items():
-                    if isinstance(task, dict):
-                        deadline = task.get('deadline', '')
-                        deadline_str = deadline.strftime("%Y-%m-%d") if deadline else "N/A"
-                        
-                        writer.writerow([
-                            task_id,
-                            task.get('name', 'N/A'),
-                            task.get('description', 'N/A'),
-                            task.get('status', 'N/A'),
-                            task.get('tag', 'N/A'),
-                            deadline_str
-                        ])
-                    
-            print("Task report exported successfully to task_report.csv")
-        except Exception as e:
-            print(f"An error occurred while exporting to CSV: {e}")

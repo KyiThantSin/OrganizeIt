@@ -13,7 +13,7 @@ class Tags:
 
         # set up default tags 
         if 'custom_tags' not in self.root:
-            self.custom_tags = ["Work", "Personal", "Urgent"]
+            self.custom_tags = []
             self.root['custom_tags'] = self.custom_tags
             transaction.commit()
         else:
